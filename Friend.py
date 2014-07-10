@@ -1,8 +1,11 @@
 import UserData
 
 class Friend:
-    def __init__(self, username):
-        self.data = UserData(username)
+    def __init__(self, id):
+        self.data = UserData(id)
+        
+    def connect(self):
+        
         
     def get_chat(self):
         return self.data.chat_data

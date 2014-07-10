@@ -7,12 +7,14 @@ from Paths import *
 #no field can contain a space character
 #username can't contain { or }
 class UserData:
-    def __init__(self, username):
+    def __init__(self, id):
+        self.id = id
+    
         self.chat_data = []
-        self.profile_data = {'username':username, 'id':'', 'fname':'', 'lname':'', 'picture':'', 'birthday':''}
+        self.profile_data = {'username':username, 'fname':'', 'lname':'', 'picture':'', 'birthday':''}
         
-        self.profile_data_file_path = friends_data_path + slash + self.profile_data['username'] + data_file_extension
-        self.chat_data_file_path = chat_data_path + slash + self.profile_data['username'] + data_file_extension
+        self.profile_data_file_path = friends_data_path + slash + self.id + data_file_extension
+        self.chat_data_file_path = chat_data_path + slash + self.id + data_file_extension
         
         self.load_data()
 
@@ -38,6 +40,9 @@ class UserData:
         data = ''
         for key, val in self.profile_data:
             data += key + ':' + val + ', '
+            
+        data = data[:len(data)-2] #remove the last ', '
+        
         with open(self.profile_data_file_path, 'w') as file:
             file.write(data)
     
