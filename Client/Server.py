@@ -1,3 +1,4 @@
+import Shared
 import socket
 import Queue
 
@@ -8,15 +9,21 @@ class OpCodes:
     friend_connecting = '99'
     friend_endpoint_changed = '98'
     friend_status_changed = '97'
-
+    friend_request = '96'
+    friend_request_accepted = '95'
+    friend_request_declined = '94'
     
     #outgoing
     my_state_changed = '00'
-    ask_for_status = '01'
+    request_status = '01'
     connect_to_friend = '02'        #TODO: add more
-    fname_changed = '03'
-    lname_changed = '04'
+    profile_data_changed = '03'
+    request_profile_data = '04'
     login = '05'
+    send_friend_request = '06'
+    accept_friend_request = '07'
+    decline_friend_request = '08'
+    
     
     @staticmethod
     def get_action_by_opcode(opcode):
@@ -30,8 +37,7 @@ class OpCodes:
 class Server:
     server_address = (socket.gethostbyname(socket.gethostname()), 4590) #TODO: get real address
 
-    def __init__(self, my_id):
-        self.my_id = my_id
+    def __init__(self):
         self.outgoing_messages = Queue.Queue()
         self.incoming_messages = Queue.Queue()
         self.create_new_socket()
@@ -44,9 +50,15 @@ class Server:
         #check for messages from server
         try:
             data = self.sock.recv(512) #TODO: change to server's max possible message length
-            if not data: raise Exception('Server Disconnected')
-            self.incoming_messages.put(data)
-            print 'Message from server: ' + data #TODO: delete this when all parsing functions are implemented
+            if data:
+                while not data.endswith(';'):
+                    data += self.sock.recv(1)
+                messages = [m for m in data.split(';') if m != '']
+                for m in messages:
+                    self.incoming_messages.put(m)
+                    print 'Message from server: ' + data #TODO: delete this when all parsing functions are implemented
+            else: 
+                raise Exception('Server Disconnected')
         except socket.error:
             #since the socket is non-blocking, it will raise an error each time it doesn't receive any data
             pass
@@ -68,8 +80,8 @@ class Server:
         self.sock.setblocking(0) #so listen won't need it's own thread.
     
     def login(self):
-        print 'Sending login message: ' + OpCodes.login + self.my_id
-        self.sock.send(OpCodes.login + self.my_id + ';')
+        print 'Sending login message: ' + OpCodes.login + Shared.my_data.username
+        self.sock.send(OpCodes.login + Shared.my_data.username + ';')
         #TODO: add encryption and stuff
 
     def disconnect(self):

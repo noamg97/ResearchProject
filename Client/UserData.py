@@ -6,18 +6,28 @@ from Paths import *
 #chat data is a list of Massages (author, content, time)
 #no field can contain a space character
 class UserData:
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, username):
+        self.username = username
     
         self.chat_data = []
-        self.profile_data = {'username':'', 'fname':'', 'lname':'', 'picture':'', 'birthday':''}
+        self.profile_data = { 'fname':'', 'lname':'', 'picture':'', 'birthday':''}
         
-        self.profile_data_file_path = friends_data_path + slash + self.id + data_file_extension
-        self.chat_data_file_path = chat_data_path + slash + self.id + data_file_extension
+        self.profile_data_file_path = friends_data_path + slash + self.username + data_file_extension
+        self.chat_data_file_path = chat_data_path + slash + self.username + data_file_extension
         
         folder_safety(chat_data_path)
         
         self.load_data()
+
+        
+    @staticmethod
+    def create_files(username):
+        check_all()
+        profile_data_file_path = friends_data_path + slash + username + data_file_extension
+        chat_data_file_path = chat_data_path + slash + username + data_file_extension
+        
+        open(chat_data_file_path, 'a').close()
+        open(profile_data_file_path, 'a').close()
 
         
     def load_data(self):
@@ -25,7 +35,8 @@ class UserData:
         with open(self.profile_data_file_path, 'r') as file:
             try:
                 data = file.readline().split(',')
-                for part in data:
+                fields = [m for m in data if m != '']
+                for part in fields:
                     key, value = part.replace(' ', '').split(':')
                     self.profile_data[key] = value.strip()
             except:
@@ -46,10 +57,7 @@ class UserData:
         
         with open(self.profile_data_file_path, 'w') as file:
             file.write(data)
-    
-    def create_profile_data_file(self):
-        open(self.profile_data_file_path, 'a').close()
-        
+            
     def change_profile_data(self, key, value):
         self.profile_data[key] = value
         self.save_data()

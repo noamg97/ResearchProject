@@ -4,17 +4,24 @@ import thread
 import urllib2 as ulib
 import re
 
+#TODO: load from database & add all other userdata variables
 class User:
-    def __init__(self, sock, id):
+    def __init__(self, sock, username):
         self.sock = sock
-        #TODO: load all from database & add all other userdata variables
-        self.id = id
+        
+        self.username = username
         self.state = 0
-        self.friends_list = [] 
+        self.friends_list = [] #TODO: load from database
 
 
 should_exit = False
 users = []
+
+def get_user_by_username(username):
+    for u in users:
+        if u.username == username:
+            return u
+
 
 def update(connections, users):
     global should_exit
@@ -28,21 +35,44 @@ def update(connections, users):
                         data += u.sock.recv(1)
                     messages = [m for m in data.split(';') if m != '']
                     for msg in messages:
-                        #print 'received message from user ' + u.id + ': ' + msg
                         if msg[:2] == '02':
-                            for usr in users:
-                                if usr.id == msg[2:]:
-                                    print 'user ' + u.id + ' starts connecting to ' + usr.id
-                                    usr_ip, usr_port = usr.sock.getpeername()
-                                    u_ip, u_port = u.sock.getpeername()
-                                    u.sock.send('99' + str(usr.id) + ',' + str(usr_ip) + ',' + str(usr_port))
-                                    usr.sock.send('99' + str(u.id) + ',' + str(u_ip) + ',' + str(u_port))
-                        if msg[:2] == '00':
-                            print 'user ' + u.id + ' is now ' + msg[2:].strip()
+                            usr = get_user_by_username(msg[2:])
+                            if usr:
+                                print 'user ' + u.username + ' starts connecting to ' + usr.username
+                                usr_ip, usr_port = usr.sock.getpeername()
+                                u_ip, u_port = u.sock.getpeername()
+                                u.sock.send('99' + str(usr.username) + ',' + str(usr_ip) + ',' + str(usr_port) + ';')
+                                usr.sock.send('99' + str(u.username) + ',' + str(u_ip) + ',' + str(u_port) + ';')
+                        elif msg[:2] == '00':
+                            print 'user ' + u.username + ' is now ' + msg[2:].strip()
                             u.status = int(msg[2:])
-                                
+                        elif msg[:2] == '01':
+                            print 'user ' + u.username + ' asked for ' + msg[2:] + "'s status"
+                            usr = get_user_by_username(msg[2:])
+                            if usr:
+                                u.sock.send('96' + usr.state + ';')
+                        elif msg[:2] == '06':
+                            print 'user ' + u.username + ' sent a friend request to user ' + msg[2:]
+                            usr = get_user_by_username(msg[2:])
+                            if usr:
+                                usr.sock.send('96' + u.username + ';')
+                            else: 
+                                print 'user ' + msg[2:] + ' does not exist'
+                                u.sock.send('94' + msg[2:] + ';')
+                        elif msg[:2] == '07':
+                            print 'user ' + u.username + ' accepted a friend request from user ' + msg[2:]
+                            usr = get_user_by_username(msg[2:])
+                            if usr:
+                                usr.friends_list.append(u.username)
+                                u.friends_list.append(usr.username)
+                                usr.sock.send('95' + u.username + ';')
+                        elif msg[:2] == '08':
+                            print 'user ' + u.username + ' declined a friend request from user ' + msg[2:]
+                            usr = get_user_by_username(msg[2:])
+                            if usr:
+                                usr.sock.send('94' + u.username + ';')
                 else:
-                    print u.id + ' disconnected'
+                    print u.username + ' disconnected'
                     u.sock.close()
                     users.remove(u)
             except socket.error: pass
@@ -57,9 +87,9 @@ def update(connections, users):
                         data = c.recv(1)
                         
                     if msg[:2] == '05':
-                        user_id = msg[2:].strip()
-                        print 'user ' + user_id + ' logged in from ' + str(c.getpeername())
-                        users.append(User(c, user_id))
+                        username = msg[2:].strip()
+                        print 'user ' + username + ' logged in from ' + str(c.getpeername())
+                        users.append(User(c, username))
                         connections.remove(c)
                 else:
                     c.close()
@@ -76,8 +106,8 @@ def update(connections, users):
 
 data = ulib.urlopen('http://www.ipchicken.com/').read()
 external_ip = re.search("\\d{1,3}\\.\\d{1,3}\\.\d{1,3}\\.\\d{1,3}", data).group()
-external_port =  re.search("Port: \d*", data).group()[len('Port: '):]
-print 'extarnal endpoint: ' + external_ip + ':' + external_port
+#external_port =  re.search("Port: \d*", data).group()[len('Port: '):]
+print 'extarnal ip: ' + external_ip #+ ':' + external_port
 
 s = socket.socket()
 s.bind((socket.gethostbyname(socket.gethostname()), 4590))

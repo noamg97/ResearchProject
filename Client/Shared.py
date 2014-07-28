@@ -1,13 +1,8 @@
-my_id = ''
+my_data = None
 server = None
 friends_list = []
 
-def get_friend_by_id(id):
+def get_friend_by_username(username):
     for fr in friends_list:
-        if fr.data.id == id:
+        if fr.data.username == username:
             return fr
-
-def get_username_from_id(id):
-    for fr in friends_list:
-        if fr.data.id == id:
-            return fr.data.profile_data['username']

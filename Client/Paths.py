@@ -27,6 +27,8 @@ my_data_path = app_data_path + slash + 'Me' + data_file_extension
 def check_all():
     folder_safety(friends_data_path)
     folder_safety(chat_data_path)
+    #open(my_data_path, 'a').close()
+
     
 def folder_safety(folder):
     if not os.path.exists(folder):

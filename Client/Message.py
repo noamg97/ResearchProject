@@ -19,7 +19,7 @@ class Message:
         return Message(author, content, datetime.strptime(time, '%Y-%m-%d %H:%M:%S.%f'))
     
     def to_readable(self):
-        return '[' + str(self.time) + '] ' + Shared.get_username_from_id(self.author) + ': ' + self.content
+        return '[' + str(self.time) + '] ' + self.author.data.username + ': ' + self.content
     
     def edit(self, new_content):
         self.content = new_content

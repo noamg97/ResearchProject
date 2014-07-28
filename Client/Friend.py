@@ -1,6 +1,7 @@
 import UserData
 import Message
 import Shared
+from Server import OpCodes
 import socket
 import time
 import Queue
@@ -17,13 +18,21 @@ class StatusCodes:
 
 
 class Friend:
-    def __init__(self, id):
+    def __init__(self, username, is_new=False):
+        if is_new:
+            UserData.UserData.create_files(username)
+        
         self.status = StatusCodes.offline
-        self.data = UserData.UserData(id)
+        self.data = UserData.UserData(username)
         self.out_messages = Queue.Queue()
         self.sock = None
         self.is_connected = False
-        
+
+        #ask the server for his current status
+        Shared.server.message(OpCodes.request_status, username)
+
+            
+    
     #hole punching
     def start_punching(self, his_ep):
         if self.sock:
@@ -85,7 +94,7 @@ class Friend:
 
         
     def message(self, content):
-        msg = Message.Message(Shared.my_id, content)
+        msg = Message.Message(Shared.my_data.username, content)
         self.out_messages.put(msg)
         self.data.append_message_to_chat(msg)
         
