@@ -50,7 +50,7 @@ def update(connections, users):
                             print 'user ' + u.username + ' asked for ' + msg[2:] + "'s status"
                             usr = get_user_by_username(msg[2:])
                             if usr:
-                                u.sock.send('96' + usr.state + ';')
+                                u.sock.send('96' + str(usr.state) + ';')
                         elif msg[:2] == '06':
                             print 'user ' + u.username + ' sent a friend request to user ' + msg[2:]
                             usr = get_user_by_username(msg[2:])
@@ -111,6 +111,7 @@ print 'extarnal ip: ' + external_ip #+ ':' + external_port
 
 s = socket.socket()
 s.bind((socket.gethostbyname(socket.gethostname()), 4590))
+#s.bind((external_ip, 4590))
 my_ip, my_port = s.getsockname()
 print 'internal endpoint: ' + my_ip + ':' + str(my_port)
 print '\n------------\n'

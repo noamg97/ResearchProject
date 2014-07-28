@@ -56,7 +56,7 @@ class MessageParser:
     #friend_username
     def parse_friend_request_accepted(self, value):
         print 'User ' + value + ' has accepted your friend request'
-        Shared.friends_list.append(Friend.Friends(value, True))
+        Shared.friends_list.append(Friend.Friend(value, True))
         
     #friend_username
     def parse_friend_request_declined(self, value):

@@ -40,7 +40,7 @@ class Server:
 
     def __init__(self):
         if len(sys.argv) == 2: Server.server_address = (sys.argv[1], Server.server_address[1])
-        if len(sys.argv) == 3: Server.server_address = (sys.argv[1], sys.argv[2])
+        if len(sys.argv) == 3: Server.server_address = (sys.argv[1], int(sys.argv[2]))
     
         self.outgoing_messages = Queue.Queue()
         self.incoming_messages = Queue.Queue()
