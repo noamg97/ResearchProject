@@ -1,6 +1,7 @@
 import Shared
 import socket
 import Queue
+import sys
 
 class OpCodes:
     num_char = 2 #how many characters in an opcode
@@ -38,6 +39,9 @@ class Server:
     server_address = (socket.gethostbyname(socket.gethostname()), 4590) #TODO: get real address
 
     def __init__(self):
+        if len(sys.argv) == 2: Server.server_address = (sys.argv[1], Server.server_address[1])
+        if len(sys.argv) == 3: Server.server_address = (sys.argv[1], sys.argv[2])
+    
         self.outgoing_messages = Queue.Queue()
         self.incoming_messages = Queue.Queue()
         self.create_new_socket()
