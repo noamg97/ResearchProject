@@ -1,6 +1,6 @@
 import sys, os
 
-app_data_path = 'KoalaChat' #TODO: think of an actual name
+app_data_path = 'ResearchProject' #TODO: think of an actual name ::: Whoosh / 
 slash = '\\'
 
 
