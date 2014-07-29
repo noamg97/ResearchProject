@@ -6,7 +6,16 @@ class UserInputParser:
     def parse(self, input):
         if input.strip() == 'exit':
             return True
-        
+        if input.strip() == 'help':
+            print '''\nAvailable commands:
+    > connect to friend: friend_username
+    > send: friend_username: message to send
+    > send friend request: friend_username
+    > accept friend request: friend_username
+    > decline friend request: friend_username
+    '''
+            return False
+            
         a = input.split(':')
         a[0] = a[0].lower().strip()
         a[1] = a[1].strip()
