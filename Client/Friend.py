@@ -48,11 +48,11 @@ class Friend:
             
             while True:
                 if not self.sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR):
-                    print 'succeeded punching ' + self.data.profile_data['username']
+                    print 'succeeded punching ' + self.data.username
                     self.is_connected = True
                     return
                 if time.time() - start > 3: #maybe change number
-                    print 'retrying to punch ' + self.data.profile_data['username']
+                    print 'retrying to punch ' + self.data.username
                     self.sock.connect_ex(his_ep)
                     start = time.time()
 
@@ -99,7 +99,7 @@ class Friend:
         self.data.append_message_to_chat(msg)
         
     def change_status(self, status):
-        print self.data.profile_data['username'] + ' is now ' + StatusCodes.get_status_by_code(status)
+        print self.data.username + ' is now ' + StatusCodes.get_status_by_code(status)
         self.status = status
         #update GUI?
         
