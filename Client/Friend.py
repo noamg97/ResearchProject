@@ -36,7 +36,7 @@ class Friend:
     #hole punching
     def start_punching(self, his_ep):
         if self.sock:
-            print 'start punching ' + self.data.profile_data['username']
+            print 'start punching ' + self.data.username
             my_ep = self.sock.getsockname() #TODO: check if this actually works on NAT, maybe router gives me a new ext_ep although the int_ep is the same
             self.sock.close()
             self.sock = socket.socket()

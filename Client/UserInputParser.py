@@ -10,7 +10,7 @@ class UserInputParser:
             print '''\nAvailable commands:
     > connect to friend: friend_username
     > send: friend_username: message to send
-    > send friend request: friend_username
+    > friend request: friend_username
     > accept friend request: friend_username
     > decline friend request: friend_username
     '''
