@@ -50,7 +50,7 @@ def update(connections, users):
                             print 'user ' + u.username + ' asked for ' + msg[2:] + "'s status"
                             usr = get_user_by_username(msg[2:])
                             if usr:
-                                u.sock.send('96' + str(usr.state) + ';')
+                                u.sock.send('97' + str(usr.state) + ';')
                         elif msg[:2] == '06':
                             print 'user ' + u.username + ' sent a friend request to user ' + msg[2:]
                             usr = get_user_by_username(msg[2:])

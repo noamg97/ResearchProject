@@ -13,7 +13,7 @@ if sys.platform == 'linux2':
     slash = '/'
     
 if sys.platform == 'darwin':
-    app_data_path = '~/Library/Application Support/' + app_data_path #TODO: check if this works
+    app_data_path = os.path.expanduser("~") + '/Library/Application Support/' + app_data_path #TODO: check if this works
     slash = '/'
 
     

@@ -48,6 +48,7 @@ class Friend:
             
             while True:
                 if not self.sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR):
+                    #TODO: for some reason gets here when only you punch but not your friend
                     print 'succeeded punching ' + self.data.username
                     self.is_connected = True
                     return
