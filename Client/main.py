@@ -33,7 +33,6 @@ def main():
     Paths.check_all()
     Shared.my_data = MyData.MyData.load_user()
     Shared.server = Server()
-    Shared.server.message(OpCodes.my_state_changed, StatusCodes.online)
     init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
     parser = MessageParser.MessageParser()
@@ -59,7 +58,7 @@ def main():
         #allow the CPU to take a nap
         time.sleep(1.0/30.0)
         #except:
-            #exit nicely when an exception is raised
+            #exit nicely when an exception is raised. commented for easier debugging
         #    break
         
     Shared.server.disconnect()

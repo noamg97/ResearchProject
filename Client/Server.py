@@ -13,6 +13,8 @@ class OpCodes:
     friend_request = '96'
     friend_request_accepted = '95'
     friend_request_declined = '94'
+    login_succeeded = '93'
+    login_failed = '92'
     
     #outgoing
     my_state_changed = '00'
@@ -24,6 +26,7 @@ class OpCodes:
     send_friend_request = '06'
     accept_friend_request = '07'
     decline_friend_request = '08'
+    create_user = '09'
     
     
     @staticmethod
@@ -45,6 +48,8 @@ class Server:
         self.outgoing_messages = Queue.Queue()
         self.incoming_messages = Queue.Queue()
         self.create_new_socket()
+        if Shared.my_data.is_new_user:
+            self.create_user()
         self.login()
     
     def message(self, action, value):
@@ -84,10 +89,19 @@ class Server:
         self.sock.setblocking(0) #so listen won't need it's own thread.
     
     def login(self):
-        print 'Sending login message: ' + OpCodes.login + Shared.my_data.username
-        self.sock.send(OpCodes.login + Shared.my_data.username + ';')
-        #TODO: add encryption and stuff
+        msg = OpCodes.login + Shared.my_data.username + ',' + Shared.my_data.password + ';'
+        print 'Sending login message: ' + msg    
+        self.message(OpCodes.my_state_changed, StatusCodes.online)
 
+        self.sock.send(msg)
+        #TODO: add encryption and stuff
+    
+    def create_user(self):
+        msg = OpCodes.create_user + Shared.my_data.username + ',' + Shared.my_data.password + ';'
+        print 'Sending create user message: ' + msg
+        self.sock.send(msg)
+
+    
     def disconnect(self):
         print 'Disconnecting from server'
         self.sock.close()

@@ -18,7 +18,8 @@ class MessageParser:
             self.parse_friend_request_accepted(value)
         elif opcode == OpCodes.friend_request_declined:
             self.parse_friend_request_declined(value)
-            
+        elif opcode == OpCodes.login_failed:
+            self.parse_login_failed(value)
             
         #TODO: add more
     
@@ -61,8 +62,9 @@ class MessageParser:
     #friend_username
     def parse_friend_request_declined(self, value):
         print 'User ' + value + ' declined your friend request'
-
-        
+    
+    def parse_login_failed(self):
+        pass
         
         
         

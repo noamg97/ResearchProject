@@ -3,19 +3,22 @@ import time
 import thread
 import urllib2 as ulib
 import re
+import sqlite3 as sql
 
 #TODO: load from database & add all other userdata variables
 class User:
-    def __init__(self, sock, username):
+    def __init__(self, sock, username, password):
         self.sock = sock
         
         self.username = username
+        self.password = password
         self.state = 0
         self.friends_list = [] #TODO: load from database
 
 
 should_exit = False
 users = []
+    
 
 def get_user_by_username(username):
     for u in users:
@@ -25,6 +28,7 @@ def get_user_by_username(username):
 
 def update(connections, users):
     global should_exit
+    global db
     
     while not should_exit:
         for u in users:
@@ -87,10 +91,24 @@ def update(connections, users):
                         data = c.recv(1)
                         
                     if msg[:2] == '05':
-                        username = msg[2:].strip()
-                        print 'user ' + username + ' logged in from ' + str(c.getpeername())
-                        users.append(User(c, username))
-                        connections.remove(c)
+                        username, password = [ x.strip() for x in msg[2:].split(',') ]
+                        print 'user ' + username + ' logged in with password ' + password + ' from ' + str(c.getpeername())
+                        usr = get_user_by_username(username)
+                        if usr:
+                            if usr.password == password:
+                                usr.sock = c
+                                usr.sock.setblocking(0)
+                                usr.status = 1
+                                connections.remove(c)
+                                
+                            else:
+                                c.send('92;')
+                    elif msg[:2] == '09':
+                        username, password = [ x.strip() for x in msg[2:].split(',') ]
+                        print 'creating user "' + username + '" with password "' + password '"'
+                        usr = get_user_by_username(username)
+                        if not usr:
+                            db.execute("INSERT INTO users(username, password) VALUES (?);", (username, password))
                 else:
                     c.close()
                     connections.remove(c)
@@ -104,6 +122,8 @@ def update(connections, users):
         u.close()
 
 
+        
+        
 data = ulib.urlopen('http://www.ipchicken.com/').read()
 external_ip = re.search("\\d{1,3}\\.\\d{1,3}\\.\d{1,3}\\.\\d{1,3}", data).group()
 #external_port =  re.search("Port: \d*", data).group()[len('Port: '):]
@@ -118,14 +138,28 @@ print '\n------------\n'
 s.listen(5)
 connections = []
 
+
+
+db = sql.connect('database.db')
+c = db.cursor()
+c.execute("create table if not exists users (username text, password text)")
+c.execute("SELECT * FROM users")
+rows = c.fetchall()
+if rows:
+    for row in rows:
+        users.append(User(None, row[0], row[1]))
+
+
 thread.start_new_thread(update, (connections,users))
 
 try:
     while True:
         c, a = s.accept()
-        c.setblocking(0)
         connections.append(c)
         print 'connected: ', a
 except KeyboardInterrupt:
     should_exit = True
-    print 'exiting'
+
+print 'exiting'
+db.commit()
+db.close()
