@@ -34,11 +34,10 @@ class MessageParser:
         
         friend = Shared.get_friend_by_username(friend_username)
         if friend:
-            friend.sock = Shared.server.sleeping_sockets[0]
-            Shared.server.sleeping_sockets.pop(0)
-            friend.sock.setblocking(0)
+            friend.sock = Shared.server.sock
+            Shared.server.create_new_socket()
+            Shared.server.login()
             threading.Thread(target=friend.start_punching, args=[(ip, int(port))]).start()
-            Shared.server.append_sleeping_socket() # TODO: maybe move into that thread ^
         else:
             print 'Connecting friend is not on friends list'
         

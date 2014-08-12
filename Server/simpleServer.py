@@ -49,9 +49,9 @@ def update(connections, users):
                                 usr.sock.send('99' + str(u.username) + ',' + str(u_ip) + ',' + str(u_port) + ';')
                         elif msg[:2] == '00':
                             print 'user ' + u.username + ' is now ' + msg[2:].strip()
-                            u.status = int(msg[2:])
+                            u.state = int(msg[2:])
                         elif msg[:2] == '01':
-                            print 'user ' + u.username + ' asked for ' + msg[2:] + "'s status"
+                            print 'user ' + u.username + ' asked for ' + msg[2:] + "'s state"
                             usr = get_user_by_username(msg[2:])
                             if usr:
                                 u.sock.send('97' + str(usr.state) + ';')
@@ -98,7 +98,7 @@ def update(connections, users):
                             if usr.password == password:
                                 usr.sock = c
                                 usr.sock.setblocking(0)
-                                usr.status = 1
+                                usr.state = 1
                                 connections.remove(c)
                                 
                             else:
@@ -124,14 +124,11 @@ def update(connections, users):
 
         
         
-data = ulib.urlopen('http://www.ipchicken.com/').read()
-external_ip = re.search("\\d{1,3}\\.\\d{1,3}\\.\d{1,3}\\.\\d{1,3}", data).group()
-#external_port =  re.search("Port: \d*", data).group()[len('Port: '):]
-print 'extarnal ip: ' + external_ip #+ ':' + external_port
+external_ip = ulib.urlopen('http://bot.whatismyipaddress.com').read()
+print 'extarnal ip: ' + external_ip
 
 s = socket.socket()
 s.bind((socket.gethostbyname(socket.gethostname()), 4590))
-#s.bind((external_ip, 4590))
 my_ip, my_port = s.getsockname()
 print 'internal endpoint: ' + my_ip + ':' + str(my_port)
 print '\n------------\n'

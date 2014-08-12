@@ -1,6 +1,6 @@
 import sys, os
 
-app_data_path = 'Whoosh' #TODO: think of an actual name ::: ResearchProject / Whoosh / Sqwush
+app_data_path = 'ResearchProject' #TODO: think of an actual name ::: Whoosh / 
 slash = '\\'
 
 

@@ -1,0 +1,9 @@
+#flist{
+    background-color: #0f99e8;
+}
+
+GtkButton, #chat_side, #lower_chat{
+    border-image: none;
+    background-image: none;
+    background-color: #eeeeee;
+}

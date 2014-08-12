@@ -5,10 +5,6 @@ import Paths
 import MessageParser
 import UserInputParser
 import MyData
-
-import MainWindow
-import LoginWindow
-
 import os
 import threading
 import time
@@ -29,16 +25,19 @@ def init_friends():
         
 def main():
     global should_exit
-    global init_finished
+    global user_input
+    global can_start_user_input
     
     #init
     Paths.check_all()
-    Shared.server.init_sleeping_sockets()
+    Shared.my_data = MyData.MyData.load_user()
+    Shared.server = Server()
     init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
     parser = MessageParser.MessageParser()
+    input_parser = UserInputParser.UserInputParser()
     
-    init_finished = True
+    can_start_user_input = True
     
     print '\nEntering main loop'
     print '\n------------\n'
@@ -46,6 +45,9 @@ def main():
         #try:
         Shared.server.update()
         
+        while not user_input.empty():
+            should_exit = input_parser.parse(user_input.get())
+            
         while not Shared.server.incoming_messages.empty():
             parser.parse(Shared.server.incoming_messages.get())
         
@@ -58,7 +60,6 @@ def main():
             #exit nicely when an exception is raised.
         #    break
         
-    print '\nExited main loop'
     Shared.server.disconnect()
     for frnd in Shared.friends_list:
         frnd.close()
@@ -66,28 +67,21 @@ def main():
     
     
 if __name__ == '__main__':
+    user_input = Queue.Queue()
     should_exit = False
-    init_finished = False
+    can_start_user_input = False
     print '\n\n'
 
-    #Shared.server = Server()
-    
-    #l_window = LoginWindow.LoginWindow()
-    #l_window.main()
-    #del l_window
-    
-    #main_loop_thread = threading.Thread(target=main)
-    #main_loop_thread.start()
-    
-    #while not init_finished: pass
-    
+    main_loop_thread = threading.Thread(target=main) #maybe also pass friends_list
+    main_loop_thread.start()
+
+    while not can_start_user_input: pass
     
     #init GUI and main GUI loop
-    m_window = MainWindow.MainWindow()
-    m_window.main()
     
-    should_exit = True
-    #main_loop_thread.join()
     
-    print 'exited'
-    #raw_input()
+    while not should_exit:
+        inp = raw_input()
+        if inp.strip() == 'exit':
+            should_exit = True
+        user_input.put(inp)
