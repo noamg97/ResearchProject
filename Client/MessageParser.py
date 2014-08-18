@@ -18,8 +18,6 @@ class MessageParser:
             self.parse_friend_request_accepted(value)
         elif opcode == OpCodes.friend_request_declined:
             self.parse_friend_request_declined(value)
-        elif opcode == OpCodes.login_failed:
-            self.parse_login_failed(value)
             
         #TODO: add more
     
@@ -30,7 +28,7 @@ class MessageParser:
         friend_username = a[0]
         ip = a[1]
         port = a[2]
-        print 'friend connecting: ' + friend_username + ' at ' + ip + ':'+  port
+        print 'friend connecting: ' + friend_username + ' at ' + ip + ':' +  port
         
         friend = Shared.get_friend_by_username(friend_username)
         if friend:
@@ -54,18 +52,14 @@ class MessageParser:
     #friend_username
     def parse_friend_request(self, value):
         print 'User ' + value + ' has sent you a friend request'
+        Shared.main_window.append_frequest(value)
         
     #friend_username
     def parse_friend_request_accepted(self, value):
         print 'User ' + value + ' has accepted your friend request'
         Shared.friends_list.append(Friend.Friend(value, True))
+        Shared.main_window.append_friend(value)
         
     #friend_username
     def parse_friend_request_declined(self, value):
         print 'User ' + value + ' declined your friend request'
-    
-    def parse_login_failed(self):
-        pass
-        
-        
-        

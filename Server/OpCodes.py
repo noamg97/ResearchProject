@@ -1,12 +1,13 @@
 num_char = 2 #how many characters in an opcode
 
 
-#____Unidentified Users:____#
+#____Blocking (Unidentified Users):____#
 
 #incoming
 login = '00'
 user_creation = '01'
 sleeping_socket_connection = '02'
+send_friends_list = '03'
 
 #outgoing
 login_accepted = '99'
@@ -19,7 +20,7 @@ sleeping_socket_declined = '94'
 
 
 
-#____Logged In Users:____#
+#____Non-Blocking (Logged In Users):____#
 
 #incoming
 user_state_changed = '00'

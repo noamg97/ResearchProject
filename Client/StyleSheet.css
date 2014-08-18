@@ -1,9 +1,68 @@
-#flist{
-    background-color: #0f99e8;
+*{
+    -GtkWidget-focus-line-width: 0;
 }
 
-GtkButton, #chat_side, #lower_chat{
+GtkButton{
     border-image: none;
     background-image: none;
-    background-color: #eeeeee;
+    background-color: #eee;
+}
+GtkButton:hover, GtkButton:hover, GtkButton:hover{
+    background-color: #d4d4d4;
+}
+
+GtkButton:active{
+    background-color: #fff;
+}
+#notebook_frame GtkButton{
+    background-color: #343131;
+    color: white;
+}
+#notebook_frame GtkButton:hover, #notebook_frame GtkButton:hover, #notebook_frame GtkButton:hover{
+    background-color: shade(#343131, 1.1);
+}
+
+#notebook_frame GtkButton:active{
+    background-color: #fff;
+}
+
+#notebook_frame{
+    background-color: #343131;
+    border-style: none;
+    border-width: 0px 5px 0px 5px;
+    border-color: #343131;
+}
+GtkNotebook, #friend_requests_container{
+    background-image: none;
+    background-color: #0f99e8;
+    border-style: none;
+    box-shadow: none;
+}
+
+GtkTreeView row{
+    font-size:50px;
+    background-color: #0f99e8;
+    padding: 100px 0px 100px 0px;
+}
+GtkTreeView row:selected {
+    background-color: #343131;
+}
+
+
+GtkNotebook tab{
+    padding: 10px 20px 10px 20px;
+    background-image: none;
+    background-color: #343131;
+    color: #fff;
+    border-style: none;
+    box-shadow: none;
+}
+GtkNotebook *{
+    color: #fff;
+}
+GtkNotebook GtkEntry{
+    color: #000
+}
+GtkNotebook tab:active{    
+    background-color: #0f99e8;
 }

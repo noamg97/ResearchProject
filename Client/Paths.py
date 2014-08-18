@@ -16,13 +16,23 @@ if sys.platform == 'darwin':
     app_data_path = os.path.expanduser("~") + '/Library/Application Support/' + app_data_path #TODO: check if this works
     slash = '/'
 
+data_file_extension = '.dat' #TODO: .dat?
+friends_data_path=''
+chat_data_path=''
+my_data_path=''
+
+#called from Server.send_login_request() after server accepts user's login
+def init(username):
+    global app_data_path, slash, my_data_path, friends_data_path, chat_data_path, my_data_path, data_file_extension
     
-friends_data_path = app_data_path + slash + 'Friends'
-chat_data_path = app_data_path + slash + 'Chat'
+    app_data_path += slash + str(username)
+    friends_data_path = app_data_path + slash + 'Friends'
+    chat_data_path = app_data_path + slash + 'Chat'
+    
+    my_data_path = app_data_path + slash + 'Me' + data_file_extension
+    
+    check_all()
 
-data_file_extension = '.dat' #TODO: .dat files..?
-
-my_data_path = app_data_path + slash + 'Me' + data_file_extension
 
 def check_all():
     folder_safety(friends_data_path)

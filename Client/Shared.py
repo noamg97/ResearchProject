@@ -1,6 +1,7 @@
 my_data = None
 server = None
 friends_list = []
+main_window = None
 
 def get_friend_by_username(username):
     for fr in friends_list:

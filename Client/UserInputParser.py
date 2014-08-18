@@ -2,27 +2,27 @@ from Server import OpCodes
 import Friend
 import Shared
 
-#connect to friend: friend_username
 def connect_to_friend(username):
-    Shared.server.message(OpCodes.connect_to_friend, a[1])
+    Shared.server.message(OpCodes.connect_to_friend, username)
  
-#send: friend_username: message to send
-def send_message(msg):
-    friend = Shared.get_friend_by_username(a[1])
+def send_message(username, msg):
+    friend = Shared.get_friend_by_username(username)
     if friend:
-        friend.message(input[input.find(':',input.find(':')+1) + 1:])
+        friend.message(msg)
     else:
-        print 'User ' + a[1] + ' not on friends list'
+        print 'User ' + friend + ' not on friends list'
 
-#send friend request: friend_username
 def send_friend_request(friend):
-    Shared.server.message(OpCodes.send_friend_request, a[1])
+    friend = str(friend).strip()
+    if friend in Shared.friends_list:
+        print 'user ' + friend + " is already in your friends list"
+        return
+    Shared.server.message(OpCodes.send_friend_request, friend)
 
-#accept friend request: friend_username
 def accept_friend_request(friend):
-    Shared.server.message(OpCodes.accept_friend_request, a[1])
-    Shared.friends_list.append(Friend.Friend(a[1], True))
+    Shared.server.message(OpCodes.accept_friend_request, friend)
+    Shared.friends_list.append(Friend.Friend(friend, True))
+    Shared.main_window.append_friend(friend)
 
-#decline friend request: friend_username
 def decline_friend_request(friend):
-    Shared.server.message(OpCodes.decline_friend_request, a[1])
+    Shared.server.message(OpCodes.decline_friend_request, friend)

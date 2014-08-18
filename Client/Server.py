@@ -1,4 +1,6 @@
 import Shared
+import UserData
+import Paths
 import socket
 import Queue
 import sys
@@ -6,12 +8,13 @@ import sys
 class OpCodes:
     num_char = 2 #how many characters in an opcode
     
-    #____New Connections:____#
+    #____Blocking (New Connections):____#
     
     #incoming
     login = '00'
     user_creation = '01'
     sleeping_socket_connection = '02'
+    friends_list = '03'
 
     #outgoing
     login_accepted = '99'
@@ -24,7 +27,7 @@ class OpCodes:
     
 
     
-    #____Logged In Users:____#
+    #____Non-Blocking (Logged In Users):____#
 
     #outgoing
     my_state_changed = '00'
@@ -78,7 +81,8 @@ class Server:
                 for m in messages:
                     self.incoming_messages.put(m)
                     print 'Message from server: ' + data #TODO: delete this when all parsing functions are implemented
-            else: 
+            else:
+                Shared.main_window.destroy()
                 raise Exception('Server Disconnected')
         except socket.error:
             #since the socket is non-blocking, it will raise an error each time it doesn't receive any data
@@ -129,47 +133,56 @@ class Server:
 
         self.sleeping_sockets.append(s)
     
-    def send_login_request(self):
+    def send_login_request(self, username, password, state):
         #TODO: add encryption and stuff
-        msg = OpCodes.login + Shared.my_data.username + ',' + Shared.my_data.password + ';'
+        msg = OpCodes.login + username + ',' + password + ';'
         print 'Sending login message: ' + msg
         self.sock.send(msg)
         
-        response = ''
-        data_byte = self.sock.recv(1)
-        while data_byte != ';':
-            response += data_byte
-            data_byte = self.sock.recv(1)
-        
+        response = self.recv_one_blocking()
         if response == OpCodes.login_accepted:
             print 'login accepted'
+            
+            Paths.init(username)
+            
+            frnds_list_msg = self.recv_one_blocking()
+            if frnds_list_msg[:OpCodes.num_char] == OpCodes.friends_list:
+                f_list = frnds_list_msg[OpCodes.num_char:].split(',')
+                for f in f_list:
+                    UserData.UserData.create_files(f)
+            
             self.sock.setblocking(0)
-            self.message(OpCodes.my_state_changed, Shared.my_data.state)
+            self.message(OpCodes.my_state_changed, state)
             return True
         if response == OpCodes.login_declined:
             print 'login declined'
             return False
         
-    def send_create_user_request(self):
-        msg = OpCodes.user_creation + Shared.my_data.username + ',' + Shared.my_data.password + ';'
+    def send_create_user_request(self, username, password):
+        msg = OpCodes.user_creation + username + ',' + password + ';'
         print 'Sending create user message: ' + msg
         self.sock.send(msg)
         
-        response = ''
-        data_byte = self.sock.recv(1)
-        while data_byte != ';':
-            response += data_byte
-            data_byte = self.sock.recv(1)
+        response = self.recv_one_blocking()
         
         if response == OpCodes.user_created:
             print 'user created'
+            Paths.init(username)
             self.sock.setblocking(0)
-            self.message(OpCodes.my_state_changed, Shared.my_data.state)
+            self.message(OpCodes.my_state_changed, 1)
             return True
         if response == OpCodes.user_creation_declined:
             print 'user creation declined'
             return False
 
+    def recv_one_blocking(self):
+        response = ''
+        data_byte = self.sock.recv(1)
+        while data_byte != ';':
+            response += data_byte
+            data_byte = self.sock.recv(1)
+        print 'recv_one_blocking got: ', response
+        return response
     
     def disconnect(self):
         print 'Disconnecting from server'

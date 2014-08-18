@@ -44,7 +44,7 @@ def parse_user_state_changed(data, username):
     frd_list = db.get_list_from_field(username, 'friends_list')
     for friend in frd_list:
         try:
-            users_sockets[friend][0].send(send_state_changed + username + ',' + state + ';')
+            users_sockets[friend].send(send_state_changed + str(username) + ',' + str(state))
         except KeyError: pass
         
         
@@ -56,12 +56,12 @@ def parse_user_connecting_to_friend(data, username):
     frd_list = db.get_list_from_field(username, 'friends_list')
     if friend_username in frd_list:
         if int(db.get_fields(friend_username, 'state')[0]) != 0:
-            if len(users_sockets[username]) > 1 and len(users_sockets[friend_username]) > 1:
-                usr_ip, usr_port = users_sockets[username][1].getpeername()
-                frnd_ip, frnd_port = users_sockets[friend_username][1].getpeername()
+            if any(users_sockets[username].sleeping_sockets) and any(users_sockets[friend_username].sleeping_sockets):
+                usr_ip, usr_port = users_sockets[username].use_sleeping()
+                frnd_ip, frnd_port = users_sockets[friend_username].use_sleeping()
                 
-                users_sockets[username][0].send(send_friend_connecting + friend_username + ',' + frnd_ip + ',' + str(frnd_port) + ';')
-                users_sockets[friend_username][0].send(send_friend_connecting + username + ',' + usr_ip + ',' + str(usr_port) + ';')
+                users_sockets[username].send(send_friend_connecting + friend_username + ',' + frnd_ip + ',' + str(frnd_port))
+                users_sockets[friend_username].send(send_friend_connecting + username + ',' + usr_ip + ',' + str(usr_port))
             else: print 'either ' + username + ' or ' + friend_username + " don't have a connected sleeping socket"
         else: print friend_username + ' is offline'
     else: print friend_username + ' not on ' + username + "'s friends list."
@@ -80,8 +80,8 @@ def parse_friend_request(data, username):
         frd_list = db.get_list_from_field(username, 'friends_list')
         if friend_username not in frd_list:
             db.append_to_field(username, 'sent_friend_requests', friend_username)
-            if int(db.get_fields(friend_username, 'state')[0]) != 0:
-                users_sockets[friend_username].send(send_friend_request + username + ';')
+            if int(db.get_fields(friend_username, 'state')[0][0]) != 0:
+                users_sockets[friend_username].send(send_friend_request + username)
             else:
                 db.append_to_field(friend_username, 'queued_messages', send_friend_request + username)
         else: print friend_username + ' already in ' + username + "'s friends list"
@@ -99,8 +99,8 @@ def parse_friend_request_accepted(data, username):
         
         db.remove_from_field(friend_username, 'sent_friend_requests', username)
         
-        if int(db.get_fields(friend_username, 'state')[0]) != 0:
-            users_sockets[friend_username].send(send_friend_request_accepted + username + ';')
+        if int(db.get_fields(friend_username, 'state')[0][0]) != 0:
+            users_sockets[friend_username].send(send_friend_request_accepted + username)
         else:
             db.append_to_field(friend_username, 'queued_messages', send_friend_request_accepted + username)
         
@@ -113,7 +113,7 @@ def parse_friend_request_declined(data, username):
     if username in db.get_list_from_field(friend_username, 'sent_friend_requests'):
         db.remove_from_field(friend_username, 'sent_friend_requests', username)
         
-        if int(db.get_fields(friend_username, 'state')[0]) != 0:
-            users_sockets[friend_username].send(send_friend_request_declined + username + ';')
+        if int(db.get_fields(friend_username, 'state')[0][0]) != 0:
+            users_sockets[friend_username].send(send_friend_request_declined + username)
         else:
             db.append_to_field(friend_username, 'queued_messages', send_friend_request_declined + username)

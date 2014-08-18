@@ -1,6 +1,6 @@
 import Message
 import os
-from Paths import *
+import Paths
 
 #chat data and profile data are stored in different files.
 #chat data is a list of Massages (author, content, time)
@@ -12,20 +12,21 @@ class UserData:
         self.chat_data = []
         self.profile_data = { 'fname':'', 'lname':'', 'picture':'', 'birthday':''}
         
-        self.profile_data_file_path = friends_data_path + slash + self.username + data_file_extension
-        self.chat_data_file_path = chat_data_path + slash + self.username + data_file_extension
+        self.profile_data_file_path = Paths.friends_data_path + Paths.slash + self.username + Paths.data_file_extension
+        self.chat_data_file_path = Paths.chat_data_path + Paths.slash + self.username + Paths.data_file_extension
         
-        folder_safety(chat_data_path)
+        Paths.folder_safety(Paths.chat_data_path)
         
         self.load_data()
 
         
     @staticmethod
     def create_files(username):
-        check_all()
-        profile_data_file_path = friends_data_path + slash + username + data_file_extension
-        chat_data_file_path = chat_data_path + slash + username + data_file_extension
-        
+        print 'creating files for ', username
+        Paths.check_all()
+        profile_data_file_path = Paths.friends_data_path + Paths.slash + username + Paths.data_file_extension
+        chat_data_file_path = Paths.chat_data_path + Paths.slash + username + Paths.data_file_extension
+                
         open(chat_data_file_path, 'a').close()
         open(profile_data_file_path, 'a').close()
 

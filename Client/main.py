@@ -13,6 +13,8 @@ import os
 import threading
 import time
 import Queue
+import traceback
+import sys
 
 
 
@@ -32,7 +34,6 @@ def main():
     global init_finished
     
     #init
-    Paths.check_all()
     Shared.server.init_sleeping_sockets()
     init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
@@ -43,26 +44,33 @@ def main():
     print '\nEntering main loop'
     print '\n------------\n'
     while not should_exit:
-        #try:
-        Shared.server.update()
+        try:
+            Shared.server.update()
+            
+            while not Shared.server.incoming_messages.empty():
+                parser.parse(Shared.server.incoming_messages.get())
+            
+            for fd in Shared.friends_list:
+                fd.update()
         
-        while not Shared.server.incoming_messages.empty():
-            parser.parse(Shared.server.incoming_messages.get())
-        
-        for fd in Shared.friends_list:
-            fd.update()
-        
-        #allow the CPU to take a nap
-        time.sleep(1.0/30.0)
-        #except:
+            #allow the CPU to take a nap
+            time.sleep(1.0/30.0)
+        except Exception as ex:
             #exit nicely when an exception is raised.
-        #    break
+            print '\n', traceback.format_exc()
+            #for frame in traceback.extract_tb(sys.exc_info()[2]):
+            #    fname,lineno,fn,text = frame
+            #    print "--->%s in %s on line %d\nException Arguments: %s" % (type(ex).__name__, fname, lineno, ex.args)
+            break
         
     print '\nExited main loop'
+    
     Shared.server.disconnect()
     for frnd in Shared.friends_list:
         frnd.close()
     print 'Friends disconnected'
+    while not Shared.main_window: pass
+    Shared.main_window.destroy()
     
     
 if __name__ == '__main__':
@@ -70,24 +78,24 @@ if __name__ == '__main__':
     init_finished = False
     print '\n\n'
 
-    #Shared.server = Server()
+    Shared.server = Server()
     
-    #l_window = LoginWindow.LoginWindow()
-    #l_window.main()
-    #del l_window
+    l_window = LoginWindow.LoginWindow()
+    _continue = l_window.main()
+    l_window.destroy()
     
-    #main_loop_thread = threading.Thread(target=main)
-    #main_loop_thread.start()
-    
-    #while not init_finished: pass
-    
-    
-    #init GUI and main GUI loop
-    m_window = MainWindow.MainWindow()
-    m_window.main()
-    
-    should_exit = True
-    #main_loop_thread.join()
-    
+    if _continue:
+        main_loop_thread = threading.Thread(target=main)
+        main_loop_thread.start()
+        
+        while not init_finished: pass
+        
+        
+        #init GUI and main GUI loop
+        Shared.main_window = MainWindow.MainWindow()
+        Shared.main_window.main()
+        
+        should_exit = True
+        main_loop_thread.join()
+        
     print 'exited'
-    #raw_input()

@@ -28,10 +28,6 @@ class Friend:
         self.sock = None
         self.is_connected = False
 
-        #ask the server for his current state
-        Shared.server.message(OpCodes.request_state, username)
-
-            
     
     #hole punching
     def start_punching(self, his_ep):

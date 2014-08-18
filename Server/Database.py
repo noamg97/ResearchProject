@@ -33,9 +33,8 @@ class ThreadSafeDatabase:
             
             
 class Database(ThreadSafeDatabase):
-    def __init__(self, users_sockets):
+    def __init__(self):
         ThreadSafeDatabase.__init__(self, sql.connect('database.db', check_same_thread=False))
-        self.users_sockets = users_sockets
         self.execute('CREATE TABLE IF NOT EXISTS users(' \
         'username TEXT, pass TEXT, state INTEGER, friends_list TEXT, profile_data TEXT, queued_messages TEXT, sent_friend_requests TEXT)')
         
@@ -49,16 +48,21 @@ class Database(ThreadSafeDatabase):
         return self.execute("SELECT " + ','.join(fields) + " FROM users WHERE username=?", (username,), True)
 
     def get_list_from_field(self, username, field):
-        return [x for x in self.get_fields(username, field)[0][0].split(';') if x != '']
-    
+        fields = self.get_fields(username, field)
+        if len(fields) > 0 and len(fields[0]) > 0:
+            return [x for x in self.get_fields(username, field)[0][0].split(';') if x != '']
+        return []
+        
     def set_field(self, username, field, value):
         self.execute('UPDATE users SET ' + field + '=:val WHERE username=:usr', {'val':value, 'usr':username}, commit=True)
         
     def append_to_field(self, username, field, to_append):
-        self.execute('UPDATE users SET :field=:field||:msg WHERE username=:usr', {'field':field ,'msg':message + ';', 'usr':username}, commit=True)
+        self.execute('UPDATE users SET '+field+'=(SELECT '+field+' FROM users WHERE username=:usr)||:msg WHERE username=:usr', {'msg':to_append + ';', 'usr':username}, commit=True)
     
     def remove_from_field(self, username, field, to_remove):
-        self.set_field(username, field, ';'.join(self.get_list_from_field(username, field).remove(to_remove)))
+        l = self.get_list_from_field(username, field)
+        l.remove(to_remove)
+        self.set_field(username, field, ';'.join(l))
 
     def does_user_exist(self, username):
         ret = self.execute('SELECT username FROM users WHERE username=?', (username,), True)
