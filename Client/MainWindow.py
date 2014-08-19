@@ -13,6 +13,10 @@ class MainWindow(Gtk.Window):
         self.set_default_size(850, 500)
         #self.set_decorated(False)
         
+        self.chat_windows = {}
+        self.current_chat_window = None
+        self.current_chat_window_username = None
+        
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path('StyleSheet.css')
@@ -30,12 +34,10 @@ class MainWindow(Gtk.Window):
         chat_scroller = Gtk.ScrolledWindow()
         chat_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         chat_scroller.set_shadow_type(Gtk.ShadowType.NONE)
-        chat_side.pack1(chat_scroller, resize=True, shrink=False)
         
-        self.chat = Gtk.TextView()
-        self.chat.set_editable(False)
-        self.chat.set_cursor_visible(False)
-        chat_scroller.add(self.chat)
+        self.chat_box = Gtk.VBox(False, 0)
+        chat_scroller.add(self.chat_box)
+        chat_side.pack1(chat_scroller, resize=True, shrink=False)
         
         lower_chat = Gtk.HBox(False, 0)
         chat_side.pack2(lower_chat, resize=False, shrink=False)
@@ -98,6 +100,7 @@ class MainWindow(Gtk.Window):
 
         
         self.show_all()
+        self.load_chat_data()
         
         #self.anim_counter = 0
         #self.anim_done = False
@@ -107,6 +110,10 @@ class MainWindow(Gtk.Window):
         #GLib.timeout_add(1000.0/60, self.animate_flist, hpaned, 1000, 1000.0/60,  flist_scroller.get_size_request()[0])
         
     def send(self, widget, data=None):
+        if self.current_chat_window_username:
+            friend = Shared.get_friend_by_username(self.current_chat_window_username)
+            if friend:
+                friend.message(self.textbox.get_text())
         print 'send'
      
     def send_friend_request(self, widget, data=None):
@@ -128,7 +135,29 @@ class MainWindow(Gtk.Window):
         model, treeiter = selection.get_selected()
         if treeiter != None:
             print "You selected", model[treeiter][0]
+            if self.current_chat_window:
+                self.current_chat_window.hide()
+            self.chat_windows[model[treeiter][0]].show_all()
+            self.current_chat_window = self.chat_windows[model[treeiter][0]]
+            self.current_chat_window_username = model[treeiter][0]
             
+    def load_chat_data(self):
+        for friend in Shared.friends_list:
+            chat_widget = Gtk.VBox(False, 5)
+            
+            for msg in friend.data.chat_data:
+                chat_widget.pack_start(ChatMessageBox(msg), False, False, 4)
+            
+            self.chat_windows[friend.data.username] = chat_widget
+            self.chat_box.add(chat_widget)
+            
+    def append_chat_message(self, username, msg):
+        c_msg = ChatMessageBox(msg)
+        self.chat_windows[username].pack_start(c_msg, False, False, 4)
+        if self.chat_windows[username] is self.current_chat_window:
+            c_msg.show()
+        
+    
     #def animate_flist(self, paned, total_time, interval, end_pos):
     #    self.anim_counter+=1
     #    paned.set_position(round(end_pos * (self.anim_counter * interval / total_time)))
@@ -167,10 +196,7 @@ class NewFriendRequestBox(Gtk.HBox):
         self.pack_start(name, False, False, 4)
         self.pack_start(acc, False, False, 4)
         self.pack_start(dec, False, False, 4)
-        self.show()
-        name.show()
-        acc.show()
-        dec.show()
+        self.show_all()
     
     def accept_click(self, widget, user):
         UserInputParser.accept_friend_request(user)
@@ -179,3 +205,18 @@ class NewFriendRequestBox(Gtk.HBox):
     def decline_click(self, widget, user):
         UserInputParser.decline_friend_request(user)
         self.destroy()
+        
+        
+class ChatMessageBox(Gtk.HBox):
+    def __init__(self, message):
+        self.__init__(message.time, message.author, message.content)
+        
+    def __init__(self, time, author, content):
+        Gtk.HBox.__init__(self, False, 5)
+        author_lbl = Gtk.Label(str(auther))
+        time_lbl = Gtk.Label(str(time))
+        content_lbl = Gtk.Label(str(content))
+        self.pack_start(author_lbl, False, False, 4)
+        self.pack_start(content_lbl, True, True, 4)
+        self.pack_start(time_lbl, False, False, 4)
+        #self.show_all()

@@ -82,6 +82,7 @@ class Friend:
                     for m in messages:
                         msg = Message.Message.from_data(m.strip())
                         self.data.append_message_to_chat(msg)
+                        Shared.main_window.append_chat_message(self.data.username, msg)
                         print msg.to_readable()
                 else:
                     self.sock.close()
