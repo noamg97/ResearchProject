@@ -40,6 +40,8 @@ def parse_user_state_changed(data, username):
     
     state = int(data)
     db.set_field(username, 'state', state)
+    try: users_sockets[username].state = state
+    except KeyError: pass
     
     frd_list = db.get_list_from_field(username, 'friends_list')
     for friend in frd_list:
@@ -55,13 +57,13 @@ def parse_user_connecting_to_friend(data, username):
     
     frd_list = db.get_list_from_field(username, 'friends_list')
     if friend_username in frd_list:
-        if int(db.get_fields(friend_username, 'state')[0]) != 0:
+        if int(db.get_fields(friend_username, 'state')[0][0]) != 0:
             if any(users_sockets[username].sleeping_sockets) and any(users_sockets[friend_username].sleeping_sockets):
                 usr_ip, usr_port = users_sockets[username].use_sleeping()
                 frnd_ip, frnd_port = users_sockets[friend_username].use_sleeping()
                 
                 users_sockets[username].send(send_friend_connecting + friend_username + ',' + frnd_ip + ',' + str(frnd_port))
-                users_sockets[friend_username].send(send_friend_connecting + username + ',' + usr_ip + ',' + str(usr_port))
+                users_sockets[friend_username].send(send_friend_connecting + username + ',' + usr_ip + ',' + str(usr_port))                
             else: print 'either ' + username + ' or ' + friend_username + " don't have a connected sleeping socket"
         else: print friend_username + ' is offline'
     else: print friend_username + ' not on ' + username + "'s friends list."

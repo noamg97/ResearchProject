@@ -66,11 +66,16 @@ def login(data, sock):
         frd_list = db.get_list_from_field(username, 'friends_list')
         sock.send(OpCodes.send_friends_list + ','.join(frd_list) + ';')
         
+        for f in frd_list:
+            try: sock.send(OpCodes.send_state_changed + f + ',' + str(users_sockets[f].state) + ';')
+            except KeyError: pass
         
         #send all messages from queued_messages.
         queued_msgs = db.get_list_from_field(username, 'queued_messages')
         if any(queued_msgs):
-            sock.send(';'.join(queued_msgs) + ';')
+            q = ';'.join(queued_msgs) + ';'
+            print 'sending queued_messages to ' + username + ': ', q
+            sock.send(q)
             db.set_field(username, 'queued_messages', '')
         return True
     else:
@@ -102,8 +107,8 @@ def append_sleeping_socket(data, sock):
     
     if db.validate_password(username, password):
         print 'sleeping socket from ' + username + ' added'
-        users_sockets[username].append(sock)
         sock.send(OpCodes.sleeping_socket_accepted + ';')
+        users_sockets[username].append(sock)
         return True
     else:
         print 'sleeping socket request from user ' + username + ' failed'
@@ -121,7 +126,7 @@ def new_connections_listener():
                 if sock is main_socket:
                     c, a = sock.accept()
                     connections.append(c)
-                    print 'connection from: ', a
+                    #print 'connection from: ', a
                     
                 else:
                     try:

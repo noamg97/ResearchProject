@@ -4,6 +4,7 @@ class UserSockets():
     def __init__(self, main_socket):
         self.main_socket = main_socket
         self.sleeping_sockets = []
+        self.state=1
 
     def send(self, msg):
         self.main_socket.send(msg + ';')
@@ -13,13 +14,15 @@ class UserSockets():
         
     def append(self, sleeping_sock):
         self.sleeping_sockets.append(sleeping_sock)
+        
      #TODO: add try & except v^
+     
     def remove(self, sleeping_sock):
         self.sleeping_sockets.remove(sleeping_sock)
         
     def use_sleeping(self):
         sock = self.sleeping_sockets[0]
-        del self.sleeping_sockets[0]
+        self.sleeping_sockets.pop(0)
         
         return sock.getpeername()
         

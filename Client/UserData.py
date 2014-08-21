@@ -1,6 +1,7 @@
 import Message
 import os
 import Paths
+from datetime import datetime
 
 #chat data and profile data are stored in different files.
 #chat data is a list of Massages (author, content, time)
@@ -41,13 +42,35 @@ class UserData:
                     key, value = part.replace(' ', '').split(':')
                     self.profile_data[key] = value.strip()
             except:
-                raise Exception('Corrupt Data File')
+                raise Exception('Corrupt Profile Data File; Username:' + self.username)
+                
                 
         #load chat data
         self.chat_data_file = open(self.chat_data_file_path, 'a+')
         self.chat_data_file.seek(0, os.SEEK_SET)
-        for line in self.chat_data_file:
-            self.chat_data.append(Message.Message.from_data(line))
+        
+        #author,time,msg_length,msg
+        #try:
+        all = self.chat_data_file.read()
+        num = 0
+        while num < len(all):
+            msg_data = []
+            for i in xrange(3):
+                data = ''
+                c = all[num]
+                while c != ',':
+                    data += c
+                    num+=1
+                    c = all[num]
+                num+=1
+                msg_data.append(data)
+            
+            msg = all[num:num+int(msg_data[2])]
+            num += int(msg_data[2])
+            self.chat_data.append(Message.Message(msg_data[0], msg, datetime.strptime(msg_data[1], '%Y-%m-%d %H:%M:%S.%f')))
+        self.chat_data_file.seek(0, 2)
+        #except:
+        #    raise Exception('Corrupt Chat Data File; Username:' + self.username)
         
     def save_data(self):
         data = ''
@@ -65,7 +88,8 @@ class UserData:
         
     def append_message_to_chat(self, message):
         self.chat_data.append(message)
+        self.chat_data_file.seek(0, 2)
         self.chat_data_file.write(message.to_data())
-     
+        
     def close_chat_data_file(self):
         self.chat_data_file.close()

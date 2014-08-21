@@ -1,21 +1,25 @@
 import UserInputParser
 import Shared
 import os
+import Queue
+from datetime import datetime
 os.environ['LANG'] = 'en_US'
 from gi.repository import Gtk, Gdk, GObject, GLib
 GObject.threads_init()
 
 class MainWindow(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL, title="Whoosh - "+Shared.my_data.username)
+        Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL, title="Whoosh - " + Shared.my_data.username)
         self.connect("delete_event", self.delete_event)
         self.connect("destroy", self.destroy_event)
         self.set_default_size(850, 500)
         #self.set_decorated(False)
         
+        self.calls = Queue.Queue()
         self.chat_windows = {}
         self.current_chat_window = None
         self.current_chat_window_username = None
+        ChatWidget.main_win = self
         
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
@@ -27,28 +31,9 @@ class MainWindow(Gtk.Window):
         hpaned = Gtk.HPaned()
         self.add(hpaned)
         
-        chat_side = Gtk.VPaned()
-        chat_side.set_size_request(450, 350)
-        hpaned.pack2(chat_side, resize=True, shrink=False)
+        self.chat_side = Gtk.VBox()
+        hpaned.pack2(self.chat_side, resize=True, shrink=False)
         
-        chat_scroller = Gtk.ScrolledWindow()
-        chat_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
-        chat_scroller.set_shadow_type(Gtk.ShadowType.NONE)
-        
-        self.chat_box = Gtk.VBox(False, 0)
-        chat_scroller.add(self.chat_box)
-        chat_side.pack1(chat_scroller, resize=True, shrink=False)
-        
-        lower_chat = Gtk.HBox(False, 0)
-        chat_side.pack2(lower_chat, resize=False, shrink=False)
-
-        self.textbox = Gtk.TextView()
-        lower_chat.pack_start(self.textbox, True, True, 0)
-        
-        send_btn = Gtk.Button("Send", halign=0)
-        send_btn.set_size_request(50,50)
-        send_btn.connect("clicked", self.send, False)
-        lower_chat.pack_start(send_btn, False, False, 0)
         
         notebook_frame = Gtk.Frame()
         notebook_frame.set_size_request(250,350)
@@ -65,20 +50,26 @@ class MainWindow(Gtk.Window):
         for f in Shared.friends_list:
             self.append_friend(f.data.username)
         
+        
         flist_box = Gtk.VBox(False, 10)
         flist = Gtk.TreeView(self.friend_store)
         flist.set_name('flist')
         flist.set_headers_visible(False)
         renderer = Gtk.CellRendererText()
+        renderer.set_padding(0, 5)
         column = Gtk.TreeViewColumn("Friends", renderer, text=0)
         column.set_spacing(50)
         flist.append_column(column)
         selection = flist.get_selection()
+        selection.set_mode(Gtk.SelectionMode.SINGLE)
         selection.connect("changed", self.friends_list_selection_changed)
         flist_box.pack_start(flist, False, False, 10)
         
+        flist_event_box = Gtk.EventBox()
+        flist_event_box.connect("button-press-event", self.friends_list_clear_selection, selection)
+        flist_event_box.add(flist_box)
         
-        notebook.append_page(flist_box, Gtk.Label('3Heads'))
+        notebook.append_page(flist_event_box, Gtk.Label('3Heads'))
         
         
         friend_requests_container = Gtk.VBox(True, 4)
@@ -102,6 +93,8 @@ class MainWindow(Gtk.Window):
         self.show_all()
         self.load_chat_data()
         
+        GObject.timeout_add(100, self.update)
+        
         #self.anim_counter = 0
         #self.anim_done = False
         #hpaned.set_position(0)
@@ -109,13 +102,55 @@ class MainWindow(Gtk.Window):
         #hpaned.connect('notify::position', self.hpaned_move, flist_scroller.get_size_request()[0])
         #GLib.timeout_add(1000.0/60, self.animate_flist, hpaned, 1000, 1000.0/60,  flist_scroller.get_size_request()[0])
         
+        
+    def update(self):
+        while not self.calls.empty():
+            items = self.calls.get()
+            func = items[0]
+            args = items[1:]
+            func(*args)
+        return True
+
+        
     def send(self, widget, data=None):
+        if data and data.keyval != 65293:
+            return False
         if self.current_chat_window_username:
             friend = Shared.get_friend_by_username(self.current_chat_window_username)
             if friend:
-                friend.message(self.textbox.get_text())
-        print 'send'
-     
+                if self.current_chat_window.textbuffer.get_char_count():
+                    start, end = self.current_chat_window.textbuffer.get_bounds()
+                    friend.message(self.current_chat_window.textbuffer.get_text(start, end, True))
+                    self.current_chat_window.textbuffer.delete(start, end)
+        return True
+        
+    def load_chat_data(self):
+        for friend in Shared.friends_list:
+            self.chat_windows[friend.data.username].append_multiple(friend.data.chat_data)
+            self.chat_windows[friend.data.username].hide()
+            self.chat_side.pack_start(self.chat_windows[friend.data.username], True, True, 0)
+            
+    def append_chat_message(self, username, msg):
+        self.chat_windows[username].append(msg, self.chat_windows[username] is self.current_chat_window)
+  
+    def friends_list_selection_changed(self, selection):
+        model, treeiter = selection.get_selected()
+        if treeiter != None:
+            if self.current_chat_window:
+                self.current_chat_window.hide()
+            self.chat_windows[model[treeiter][0]].show_all()
+            self.current_chat_window = self.chat_windows[model[treeiter][0]]
+            self.current_chat_window_username = model[treeiter][0]
+
+    def friends_list_clear_selection(self, widget, event, flist_selection):
+        flist_selection.unselect_all()
+        if self.current_chat_window:
+            self.current_chat_window.hide()
+        self.current_chat_window = None
+        self.current_chat_window_username = None
+
+            
+            
     def send_friend_request(self, widget, data=None):
         name = data.get_text()
         if name:
@@ -127,37 +162,11 @@ class MainWindow(Gtk.Window):
     def append_friend(self, username):
         itr = self.friend_store.append([username])
         self.friend_store.set(itr, [0], [username])
+        self.chat_windows[username] = ChatWidget([])
+        self.chat_side.pack_start(self.chat_windows[username], True, True, 0)
     
     
-    
-    
-    def friends_list_selection_changed(self, selection):
-        model, treeiter = selection.get_selected()
-        if treeiter != None:
-            print "You selected", model[treeiter][0]
-            if self.current_chat_window:
-                self.current_chat_window.hide()
-            self.chat_windows[model[treeiter][0]].show_all()
-            self.current_chat_window = self.chat_windows[model[treeiter][0]]
-            self.current_chat_window_username = model[treeiter][0]
-            
-    def load_chat_data(self):
-        for friend in Shared.friends_list:
-            chat_widget = Gtk.VBox(False, 5)
-            
-            for msg in friend.data.chat_data:
-                chat_widget.pack_start(ChatMessageBox(msg), False, False, 4)
-            
-            self.chat_windows[friend.data.username] = chat_widget
-            self.chat_box.add(chat_widget)
-            
-    def append_chat_message(self, username, msg):
-        c_msg = ChatMessageBox(msg)
-        self.chat_windows[username].pack_start(c_msg, False, False, 4)
-        if self.chat_windows[username] is self.current_chat_window:
-            c_msg.show()
-        
-    
+
     #def animate_flist(self, paned, total_time, interval, end_pos):
     #    self.anim_counter+=1
     #    paned.set_position(round(end_pos * (self.anim_counter * interval / total_time)))
@@ -207,16 +216,68 @@ class NewFriendRequestBox(Gtk.HBox):
         self.destroy()
         
         
-class ChatMessageBox(Gtk.HBox):
-    def __init__(self, message):
-        self.__init__(message.time, message.author, message.content)
+class ChatWidget(Gtk.VPaned):
+    main_win = None
+    def __init__(self, friend_chat_data):
+        Gtk.VPaned.__init__(self)
+        self.set_size_request(450, 350)
         
-    def __init__(self, time, author, content):
-        Gtk.HBox.__init__(self, False, 5)
-        author_lbl = Gtk.Label(str(auther))
-        time_lbl = Gtk.Label(str(time))
-        content_lbl = Gtk.Label(str(content))
-        self.pack_start(author_lbl, False, False, 4)
-        self.pack_start(content_lbl, True, True, 4)
-        self.pack_start(time_lbl, False, False, 4)
-        #self.show_all()
+        self.chat_scroller = Gtk.ScrolledWindow()
+        self.chat_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
+        self.chat_scroller.set_shadow_type(Gtk.ShadowType.NONE)
+        self.pack1(self.chat_scroller, resize=True, shrink=False)
+        
+        chat = Gtk.VBox(False, 0)
+        self.chat_scroller.add(chat)
+        
+        lower_chat = Gtk.HBox(False, 0)
+        self.pack2(lower_chat, resize=False, shrink=False)
+
+        textview = Gtk.TextView()
+        textview.connect("key-press-event", self.key_event)
+        self.textbuffer = textview.get_buffer()
+        lower_chat.pack_start(textview, True, True, 0)
+        
+        send_btn = Gtk.Button("Send", halign=0)
+        send_btn.set_size_request(50,50)
+        send_btn.connect("clicked", ChatWidget.main_win.send)
+        lower_chat.pack_start(send_btn, False, False, 0)
+        
+        
+        chat_frame = Gtk.Frame()
+        chat_frame.set_name('chat_widget_frame')
+        self.chat_widget = Gtk.Grid()
+        self.chat_widget.set_row_spacing(5)
+        self.chat_widget.set_column_spacing(50)
+        chat_frame.add(self.chat_widget)
+        
+        for msg in friend_chat_data:
+            self.append(msg)
+        
+        
+        chat.add(chat_frame)
+    
+    def append(self, message, show=False):
+        author_lbl = Gtk.Label(str(message.author), halign=Gtk.Align.START, selectable=True)
+        time_lbl = Gtk.Label(datetime.strftime(message.time, '%H:%M'), halign=Gtk.Align.START, selectable=True)
+        content_lbl = Gtk.Label(str(message.content), halign=Gtk.Align.START, selectable=True, hexpand=True, wrap=True, wrap_mode=2)
+
+        if show:
+            author_lbl.show()
+            time_lbl.show()
+            content_lbl.show()
+        
+        self.chat_widget.attach_next_to(author_lbl, None, Gtk.PositionType.BOTTOM, 1, 1)
+        self.chat_widget.attach_next_to(content_lbl, author_lbl, Gtk.PositionType.RIGHT, 1, 1)
+        self.chat_widget.attach_next_to(time_lbl, content_lbl, Gtk.PositionType.RIGHT, 1, 1)
+        
+        
+    def append_multiple(self, message_list):
+        for msg in message_list:
+            self.append(msg)
+    
+    def key_event(self, widget, ev, data=None):
+        if ev.keyval == 65293:
+            ChatWidget.main_win.send(None)
+            return True
+        return False

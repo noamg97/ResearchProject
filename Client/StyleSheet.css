@@ -1,6 +1,10 @@
 *{
     -GtkWidget-focus-line-width: 0;
 }
+GtkScrollbar{
+    border-image: none;
+    background-image: none;
+}
 
 GtkButton{
     border-image: none;
@@ -26,11 +30,15 @@ GtkButton:active{
     background-color: #fff;
 }
 
+#chat_widget_frame{
+    background-color: #fff;
+    border-style: none;
+    padding: 15px;
+}
+
 #notebook_frame{
     background-color: #343131;
     border-style: none;
-    border-width: 0px 5px 0px 5px;
-    border-color: #343131;
 }
 GtkNotebook, #friend_requests_container{
     background-image: none;
@@ -40,9 +48,7 @@ GtkNotebook, #friend_requests_container{
 }
 
 GtkTreeView row{
-    font-size:50px;
     background-color: #0f99e8;
-    padding: 100px 0px 100px 0px;
 }
 GtkTreeView row:selected {
     background-color: #343131;

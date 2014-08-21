@@ -1,8 +1,8 @@
 from Friend import Friend, stateCodes
-from Server import Server, OpCodes
+from Server import Server
+import OpCodes
 import Shared
 import Paths
-import MessageParser
 import UserInputParser
 import MyData
 
@@ -37,7 +37,6 @@ def main():
     Shared.server.init_sleeping_sockets()
     init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
-    parser = MessageParser.MessageParser()
     
     init_finished = True
     
@@ -46,10 +45,7 @@ def main():
     while not should_exit:
         try:
             Shared.server.update()
-            
-            while not Shared.server.incoming_messages.empty():
-                parser.parse(Shared.server.incoming_messages.get())
-            
+                        
             for fd in Shared.friends_list:
                 fd.update()
         

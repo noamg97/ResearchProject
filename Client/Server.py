@@ -1,59 +1,13 @@
 import Shared
+import OpCodes
+import MessageParser
 import UserData
 import Paths
 import socket
 import Queue
 import sys
 
-class OpCodes:
-    num_char = 2 #how many characters in an opcode
-    
-    #____Blocking (New Connections):____#
-    
-    #incoming
-    login = '00'
-    user_creation = '01'
-    sleeping_socket_connection = '02'
-    friends_list = '03'
 
-    #outgoing
-    login_accepted = '99'
-    login_declined = '98'
-    user_created = '97'
-    user_creation_declined = '96'
-    sleeping_socket_accepted = '95'
-    sleeping_socket_declined = '94'
-    
-    
-
-    
-    #____Non-Blocking (Logged In Users):____#
-
-    #outgoing
-    my_state_changed = '00'
-    connect_to_friend = '01'
-    profile_data_changed = '02'
-    send_friend_request = '03'
-    accept_friend_request = '04'
-    decline_friend_request = '05'
-    
-    #incoming
-    friend_connecting = '99'
-    friend_state_changed = '98'
-    friend_request = '97'
-    friend_request_accepted = '96'
-    friend_request_declined = '95'
-    
-    
-    @staticmethod
-    def get_action_by_opcode(opcode):
-        for action, op in vars(OpCodes).iteritems():
-            if str(op) == str(opcode):
-                return str(action)
-        return ''
-
-    
-    
 class Server:
     server_address = (socket.gethostbyname(socket.gethostname()), 4590) #TODO: get real address
 
@@ -62,7 +16,6 @@ class Server:
         if len(sys.argv) == 3: Server.server_address = (sys.argv[1], int(sys.argv[2]))
     
         self.outgoing_messages = Queue.Queue()
-        self.incoming_messages = Queue.Queue()
         self.create_new_socket(1)
         self.sleeping_sockets = []
     
@@ -79,11 +32,11 @@ class Server:
                     data += self.sock.recv(1)
                 messages = [m for m in data.split(';') if m != '']
                 for m in messages:
-                    self.incoming_messages.put(m)
-                    print 'Message from server: ' + data #TODO: delete this when all parsing functions are implemented
+                    MessageParser.parse(m)
+                    #print 'Message from server: ' + m #TODO: delete this when all parsing functions are implemented
             else:
-                Shared.main_window.destroy()
-                raise Exception('Server Disconnected')
+                Shared.main_window.calls.put((Shared.main_window.destroy,))
+                print 'Server Disconnected'
         except socket.error:
             #since the socket is non-blocking, it will raise an error each time it doesn't receive any data
             pass
@@ -122,6 +75,7 @@ class Server:
             data_byte = s.recv(1)
         
         if response == OpCodes.sleeping_socket_accepted:
+            self.sleeping_sockets.append(s)
             print 'sleeping socket accepted'
         if response == OpCodes.sleeping_socket_declined:
             print 'sleeping socket declined'
@@ -129,9 +83,6 @@ class Server:
             #TODO: maybe retry?
             s.close()
             del s
-            return
-
-        self.sleeping_sockets.append(s)
     
     def send_login_request(self, username, password, state):
         #TODO: add encryption and stuff

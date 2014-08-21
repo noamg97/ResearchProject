@@ -1,6 +1,7 @@
 import UserData
 import Message
 import Shared
+import UserInputParser
 from Server import OpCodes
 import socket
 import time
@@ -21,22 +22,24 @@ class Friend:
     def __init__(self, username, is_new=False):
         if is_new:
             UserData.UserData.create_files(username)
-        
+
         self.state = stateCodes.offline
         self.data = UserData.UserData(username)
         self.out_messages = Queue.Queue()
         self.sock = None
         self.is_connected = False
+        self.tried_to_connect = False
 
     
     #hole punching
     def start_punching(self, his_ep):
-        if self.sock:
+        if self.sock and self.state:
             print 'start punching ' + self.data.username
             my_ep = self.sock.getsockname() #TODO: check if this actually works on NAT, maybe router gives me a new ext_ep although the int_ep is the same
             self.sock.close()
             self.sock = socket.socket()
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if hasattr(socket, 'SO_REUSEPORT'): self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             self.sock.setblocking(0)
             self.sock.bind(my_ep)
             self.sock.connect_ex(his_ep)
@@ -68,11 +71,12 @@ class Friend:
             raise Exception("no socket found to start punching")
         
     def update(self):
+        if self.state and not self.tried_to_connect and not self.out_messages.empty() and not self.is_connected:
+            self.tried_to_connect = True
+            UserInputParser.connect_to_friend(self.data.username)
+            
+        #send & receive messages
         if self.sock and self.is_connected:
-            #send & receive messages
-            while not self.out_messages.empty():
-                self.sock.send(self.out_messages.get().to_data() + ';')
-                
             try:
                 data = self.sock.recv(512)
                 if data:
@@ -80,25 +84,38 @@ class Friend:
                         data += u.sock.recv(1)
                     messages = [m for m in data.split(';') if m != '']
                     for m in messages:
-                        msg = Message.Message.from_data(m.strip())
+                        msg = Message.Message.from_data(m)
                         self.data.append_message_to_chat(msg)
-                        Shared.main_window.append_chat_message(self.data.username, msg)
-                        print msg.to_readable()
+                        Shared.main_window.calls.put((Shared.main_window.append_chat_message, self.data.username, msg))
+                        print msg.to_console()
                 else:
                     self.sock.close()
+                    self.sock = None
+                    print 'friend ' + self.data.username + ' had disconnected'
                     self.is_connected = False
+                    self.tried_to_connect = False
             except socket.error: pass
+
+
+            try:
+                while not self.out_messages.empty():
+                    self.sock.send(self.out_messages.get().to_data() + ';')
+            except socket.error:
+                self.is_connected = False
+                
 
         
     def message(self, content):
+        print 'message added to friend ' + str(self.data.username) + ': ' + str(content)
         msg = Message.Message(Shared.my_data.username, content)
         self.out_messages.put(msg)
         self.data.append_message_to_chat(msg)
+        Shared.main_window.calls.put((Shared.main_window.append_chat_message, self.data.username, msg))
         
     def change_state(self, state):
         print self.data.username + ' is now ' + stateCodes.get_state_by_code(state)
-        self.state = state
-        #update GUI?
+        self.state = int(state)
+        #TODO: update GUI?
         
     def get_chat(self):
         return self.data.chat_data

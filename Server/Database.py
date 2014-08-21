@@ -50,7 +50,7 @@ class Database(ThreadSafeDatabase):
     def get_list_from_field(self, username, field):
         fields = self.get_fields(username, field)
         if len(fields) > 0 and len(fields[0]) > 0:
-            return [x for x in self.get_fields(username, field)[0][0].split(';') if x != '']
+            return [x for x in fields[0][0].split(';') if x != '']
         return []
         
     def set_field(self, username, field, value):
