@@ -7,12 +7,12 @@ import socket
 import time
 import Queue
 
-class stateCodes:
-    offline = 0; online = 1; afk = 2; dont_disturb = 3
+class StateCodes:
+    offline = 0; online = 1; afk = 2; busy = 3
     
     @staticmethod
     def get_state_by_code(code):
-        for _state, _code in vars(stateCodes).iteritems():
+        for _state, _code in vars(StateCodes).iteritems():
             if str(_code) == str(code):
                 return str(_state)
         return ''
@@ -23,7 +23,7 @@ class Friend:
         if is_new:
             UserData.UserData.create_files(username)
 
-        self.state = stateCodes.offline
+        self.state = StateCodes.offline
         self.data = UserData.UserData(username)
         self.out_messages = Queue.Queue()
         self.sock = None
@@ -113,9 +113,10 @@ class Friend:
         Shared.main_window.calls.put((Shared.main_window.append_chat_message, self.data.username, msg))
         
     def change_state(self, state):
-        print self.data.username + ' is now ' + stateCodes.get_state_by_code(state)
+        print self.data.username + ' is now ' + StateCodes.get_state_by_code(state)
         self.state = int(state)
-        #TODO: update GUI?
+        Shared.main_window.calls.put((Shared.main_window.friend_state_changed, self.data.username, StateCodes.get_state_by_code(state)))
+        
         
     def get_chat(self):
         return self.data.chat_data

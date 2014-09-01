@@ -97,6 +97,7 @@ class Server:
             Paths.init(username)
             
             frnds_list_msg = self.recv_one_blocking()
+            #TODO: also check that there aren't any data files of non friends
             if frnds_list_msg[:OpCodes.num_char] == OpCodes.friends_list:
                 f_list = frnds_list_msg[OpCodes.num_char:].split(',')
                 for f in f_list:

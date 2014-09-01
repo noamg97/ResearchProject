@@ -3,9 +3,13 @@ import Shared
 import os
 import Queue
 from datetime import datetime
+from math import pi
 os.environ['LANG'] = 'en_US'
 from gi.repository import Gtk, Gdk, GObject, GLib
 GObject.threads_init()
+
+main_win = None
+
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -19,7 +23,8 @@ class MainWindow(Gtk.Window):
         self.chat_windows = {}
         self.current_chat_window = None
         self.current_chat_window_username = None
-        ChatWidget.main_win = self
+        global main_win
+        main_win = self
         
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
@@ -35,42 +40,21 @@ class MainWindow(Gtk.Window):
         hpaned.pack2(self.chat_side, resize=True, shrink=False)
         
         
-        notebook_frame = Gtk.Frame()
+        notebook_frame = Gtk.Frame(name='notebook_frame')
         notebook_frame.set_size_request(250,350)
-        notebook_frame.set_name('notebook_frame')
         hpaned.pack1(notebook_frame, resize=False, shrink=False)
         notebook = Gtk.Notebook()
         notebook.set_scrollable(True)
         notebook.popup_disable()
         notebook_frame.add(notebook)
         
-        
-        self.friend_store = Gtk.ListStore(str)
-
+        self.flist = FriendsListWidget()
         for f in Shared.friends_list:
             self.append_friend(f.data.username)
+            
+        notebook.append_page(self.flist, Gtk.Label('3Heads'))
         
-        
-        flist_box = Gtk.VBox(False, 10)
-        flist = Gtk.TreeView(self.friend_store)
-        flist.set_name('flist')
-        flist.set_headers_visible(False)
-        renderer = Gtk.CellRendererText()
-        renderer.set_padding(0, 5)
-        column = Gtk.TreeViewColumn("Friends", renderer, text=0)
-        column.set_spacing(50)
-        flist.append_column(column)
-        selection = flist.get_selection()
-        selection.set_mode(Gtk.SelectionMode.SINGLE)
-        selection.connect("changed", self.friends_list_selection_changed)
-        flist_box.pack_start(flist, False, False, 10)
-        
-        flist_event_box = Gtk.EventBox()
-        flist_event_box.connect("button-press-event", self.friends_list_clear_selection, selection)
-        flist_event_box.add(flist_box)
-        
-        notebook.append_page(flist_event_box, Gtk.Label('3Heads'))
-        
+
         
         friend_requests_container = Gtk.VBox(True, 4)
         notebook.append_page(friend_requests_container, Gtk.Label('Head+'))
@@ -85,22 +69,18 @@ class MainWindow(Gtk.Window):
         add_friend_btn.connect("clicked", self.send_friend_request, friend_to_add_username)
         friend_to_add_username_box.pack_start(add_friend_btn, False, False, 3)
         
+
         self.in_frequests_box = Gtk.VBox(True, 4)
         friend_requests_container.pack_start(self.in_frequests_box, True, False, 0)
         self.in_frequests_box.pack_start(Gtk.Label("New Friend Requests"), False, False, 4)
 
-        
+
         self.show_all()
         self.load_chat_data()
         
+
         GObject.timeout_add(100, self.update)
-        
-        #self.anim_counter = 0
-        #self.anim_done = False
-        #hpaned.set_position(0)
-        #print 'pos2 ', hpaned.get_position()
-        #hpaned.connect('notify::position', self.hpaned_move, flist_scroller.get_size_request()[0])
-        #GLib.timeout_add(1000.0/60, self.animate_flist, hpaned, 1000, 1000.0/60,  flist_scroller.get_size_request()[0])
+
         
         
     def update(self):
@@ -128,29 +108,18 @@ class MainWindow(Gtk.Window):
         for friend in Shared.friends_list:
             self.chat_windows[friend.data.username].append_multiple(friend.data.chat_data)
             self.chat_windows[friend.data.username].hide()
-            self.chat_side.pack_start(self.chat_windows[friend.data.username], True, True, 0)
             
     def append_chat_message(self, username, msg):
         self.chat_windows[username].append(msg, self.chat_windows[username] is self.current_chat_window)
   
-    def friends_list_selection_changed(self, selection):
-        model, treeiter = selection.get_selected()
-        if treeiter != None:
-            if self.current_chat_window:
-                self.current_chat_window.hide()
-            self.chat_windows[model[treeiter][0]].show_all()
-            self.current_chat_window = self.chat_windows[model[treeiter][0]]
-            self.current_chat_window_username = model[treeiter][0]
+    def append_friend(self, username):
+        self.flist.append(username)
+        self.chat_windows[username] = ChatWidget([])
+        self.chat_side.pack_start(self.chat_windows[username], True, True, 0)
 
-    def friends_list_clear_selection(self, widget, event, flist_selection):
-        flist_selection.unselect_all()
-        if self.current_chat_window:
-            self.current_chat_window.hide()
-        self.current_chat_window = None
-        self.current_chat_window_username = None
-
-            
-            
+    def friend_state_changed(self, username, state):
+        self.flist.friend_state_changed(username, state)
+    
     def send_friend_request(self, widget, data=None):
         name = data.get_text()
         if name:
@@ -159,30 +128,7 @@ class MainWindow(Gtk.Window):
     def append_frequest(self, username):
         self.in_frequests_box.pack_end(NewFriendRequestBox(username), False, False, 4)
     
-    def append_friend(self, username):
-        itr = self.friend_store.append([username])
-        self.friend_store.set(itr, [0], [username])
-        self.chat_windows[username] = ChatWidget([])
-        self.chat_side.pack_start(self.chat_windows[username], True, True, 0)
     
-    
-
-    #def animate_flist(self, paned, total_time, interval, end_pos):
-    #    self.anim_counter+=1
-    #    paned.set_position(round(end_pos * (self.anim_counter * interval / total_time)))
-    #    
-    #    print 'pos ', paned.get_position()
-    #    if self.anim_counter*interval >= total_time:
-    #        self.anim_done = True
-    #        return False
-    #    return True
-
-    #def hpaned_move(self, widget, what, data):
-    #    if self.anim_done and widget.props.position <= int(data):
-    #        print 'false'
-    #        return False
-    #    return True
-        
     def delete_event(self, widget, event, data=None):
         print "delete event occurred"
         return False
@@ -217,7 +163,6 @@ class NewFriendRequestBox(Gtk.HBox):
         
         
 class ChatWidget(Gtk.VPaned):
-    main_win = None
     def __init__(self, friend_chat_data):
         Gtk.VPaned.__init__(self)
         self.set_size_request(450, 350)
@@ -240,12 +185,11 @@ class ChatWidget(Gtk.VPaned):
         
         send_btn = Gtk.Button("Send", halign=0)
         send_btn.set_size_request(50,50)
-        send_btn.connect("clicked", ChatWidget.main_win.send)
+        send_btn.connect("clicked", main_win.send)
         lower_chat.pack_start(send_btn, False, False, 0)
         
         
-        chat_frame = Gtk.Frame()
-        chat_frame.set_name('chat_widget_frame')
+        chat_frame = Gtk.Frame(name='chat_widget_frame')
         self.chat_widget = Gtk.Grid()
         self.chat_widget.set_row_spacing(5)
         self.chat_widget.set_column_spacing(50)
@@ -278,6 +222,93 @@ class ChatWidget(Gtk.VPaned):
     
     def key_event(self, widget, ev, data=None):
         if ev.keyval == 65293:
-            ChatWidget.main_win.send(None)
+            main_win.send(None)
             return True
         return False
+        
+        
+class FriendsListWidget(Gtk.EventBox):
+    def __init__(self):
+        Gtk.EventBox.__init__(self)
+        self.selected_box = None
+        
+        con = Gtk.VBox(0, False)
+        self.main_box = Gtk.VBox(5, True, name='FriendsList', vexpand=False)
+        con.pack_start(self.main_box, False, False, 0)
+        
+        self.connect("button-press-event", self.friends_list_clear_selection)
+        self.add(con)
+        self.show_all()
+        
+    def append(self, username):
+        frame = Gtk.Frame(vexpand=False)
+        box = Gtk.HBox(False, 0, vexpand=False)
+        frame.add(box)
+        
+        button = Gtk.Button(username, xalign=0, margin_left=15)
+        button.connect('clicked', self.friends_list_selection_changed)
+        box.pack_start(button, True, True, 0)
+        
+        state_ind = Gtk.DrawingArea(name='offline', margin_right=15)
+        state_ind.set_size_request(15, 15)
+        state_ind.connect('draw', self.draw_friend_state)
+
+        
+        box.pack_start(state_ind, False, False, 0)
+        frame.show_all()
+        
+        self.main_box.pack_start(frame, False, False, 0)
+    
+
+    def friends_list_selection_changed(self, widget, data=None):
+        user = widget.props.label
+        
+        if self.selected_box:
+            self.selected_box.set_name("unselected_friend")
+        self.selected_box = widget.get_parent().get_parent()
+        self.selected_box.set_name("selected_friend")
+            
+        if not main_win.current_chat_window is main_win.chat_windows[user]:
+            if main_win.current_chat_window:
+                main_win.current_chat_window.hide()
+            main_win.chat_windows[user].show_all()
+            main_win.current_chat_window = main_win.chat_windows[user]
+            main_win.current_chat_window_username = user
+
+    def friends_list_clear_selection(self, widget, event, data=None):
+        if self.selected_box:
+            self.selected_box.set_name("unselected_friend")
+            
+        if main_win.current_chat_window:
+            main_win.current_chat_window.hide()
+        main_win.current_chat_window = None
+        main_win.current_chat_window_username = None
+
+    def draw_friend_state(self, drawing_area, cr):
+        state = drawing_area.get_name().lower()
+
+        cr.arc(drawing_area.get_allocated_width()/2, drawing_area.get_allocated_height()/2, drawing_area.get_allocated_width()*0.4, 0.0, 2.0 * pi)
+        cr.set_source_rgba(1,1,1,1)
+        cr.set_line_width(2.5)
+        cr.stroke()
+        
+        if state == 'offline': cr.set_source_rgba  (52/255.0,  49/255.0,   49/255.0,   1.0)
+        elif state == 'online': cr.set_source_rgba (5/255.0,   198/255.0,  0,          1.0)
+        elif state == 'afk': cr.set_source_rgba    (1,         172/255.0,  0,          1.0)
+        elif state == 'busy': cr.set_source_rgba   (200/255.0, 0,          0,          1.0)
+        else: cr.set_source_rgba(1, 1, 1,1)
+        
+        cr.arc(drawing_area.get_allocated_width()/2, drawing_area.get_allocated_height()/2, drawing_area.get_allocated_width()*0.4, 0.0, 2.0 * pi)
+        cr.fill()
+
+        
+    def friend_state_changed(self, username, state):
+        print 1
+        for box in self.main_box.get_children()[0].get_children():
+            print 2
+            btn, state_area = box.get_children()
+            if btn.props.label == username:
+                print 3
+                state_area.set_name(state)
+                state_area.queue_draw()
+                break

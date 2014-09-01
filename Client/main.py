@@ -1,4 +1,4 @@
-from Friend import Friend, stateCodes
+from Friend import Friend
 from Server import Server
 import OpCodes
 import Shared
@@ -31,14 +31,15 @@ def init_friends():
         
 def main():
     global should_exit
-    global init_finished
+    global server_init_finished, gui_init_finished
     
     #init
     Shared.server.init_sleeping_sockets()
     init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
     
-    init_finished = True
+    server_init_finished = True
+    while not gui_init_finished: pass
     
     print '\nEntering main loop'
     print '\n------------\n'
@@ -71,7 +72,8 @@ def main():
     
 if __name__ == '__main__':
     should_exit = False
-    init_finished = False
+    server_init_finished = False
+    gui_init_finished = False
     print '\n\n'
 
     Shared.server = Server()
@@ -84,11 +86,12 @@ if __name__ == '__main__':
         main_loop_thread = threading.Thread(target=main)
         main_loop_thread.start()
         
-        while not init_finished: pass
+        while not server_init_finished: pass
         
         
         #init GUI and main GUI loop
         Shared.main_window = MainWindow.MainWindow()
+        gui_init_finished = True
         Shared.main_window.main()
         
         should_exit = True

@@ -95,7 +95,6 @@ class LoginWindow(Gtk.Window):
         
     def key_event(self, widget, ev, data=None):
         if ev.keyval == 65293: #apparently enter
-            print 'enter pressed'
             self.login(widget, False)
     
     def delete_event(self, widget, event, data=None):
