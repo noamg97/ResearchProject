@@ -304,7 +304,7 @@ class FriendsListWidget(Gtk.EventBox):
         
     def friend_state_changed(self, username, state):
         print 1
-        for box in self.main_box.get_children()[0].get_children():
+        for box in [frame.get_children()[0] for frame in self.main_box.get_children()]:
             print 2
             btn, state_area = box.get_children()
             if btn.props.label == username:
