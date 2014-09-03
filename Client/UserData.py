@@ -16,20 +16,11 @@ class UserData:
         self.profile_data_file_path = Paths.friends_data_path + Paths.slash + self.username + Paths.data_file_extension
         self.chat_data_file_path = Paths.chat_data_path + Paths.slash + self.username + Paths.data_file_extension
         
-        Paths.folder_safety(Paths.chat_data_path)
+        Paths.check_all()
+        Path.file_safety(self.profile_data_file_path)
+        Path.file_safety(self.chat_data_file_path)
         
         self.load_data()
-
-        
-    @staticmethod
-    def create_files(username):
-        print 'creating files for ', username
-        Paths.check_all()
-        profile_data_file_path = Paths.friends_data_path + Paths.slash + username + Paths.data_file_extension
-        chat_data_file_path = Paths.chat_data_path + Paths.slash + username + Paths.data_file_extension
-                
-        open(chat_data_file_path, 'a').close()
-        open(profile_data_file_path, 'a').close()
 
         
     def load_data(self):

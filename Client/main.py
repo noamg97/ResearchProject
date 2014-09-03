@@ -18,24 +18,12 @@ import sys
 
 
 
-def init_friends():
-    #go through the data folders and for each file load a friend
-    content = os.listdir(Paths.friends_data_path)
-    for i in xrange(len(content)):
-        cd = Paths.friends_data_path + Paths.slash + content[i]
-        if not os.path.isdir(cd) and content[i].endswith(Paths.data_file_extension):
-            f = Friend(content[i].split('.')[0])
-            #append to the friends list
-            Shared.friends_list.append(f)
-    
-        
 def main():
     global should_exit
     global server_init_finished, gui_init_finished
     
     #init
     Shared.server.init_sleeping_sockets()
-    init_friends()
     print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
     
     server_init_finished = True

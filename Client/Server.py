@@ -1,3 +1,4 @@
+import Friend
 import Shared
 import OpCodes
 import MessageParser
@@ -102,6 +103,8 @@ class Server:
                 f_list = frnds_list_msg[OpCodes.num_char:].split(',')
                 for f in f_list:
                     UserData.UserData.create_files(f)
+                    frnd = Friend.Friend(f)
+                    Shared.friends_list.append(f)
             
             self.sock.setblocking(0)
             self.message(OpCodes.my_state_changed, state)

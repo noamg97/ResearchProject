@@ -19,10 +19,7 @@ class StateCodes:
 
 
 class Friend:
-    def __init__(self, username, is_new=False):
-        if is_new:
-            UserData.UserData.create_files(username)
-
+    def __init__(self, username):
         self.state = StateCodes.offline
         self.data = UserData.UserData(username)
         self.out_messages = Queue.Queue()

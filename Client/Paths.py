@@ -44,3 +44,7 @@ def folder_safety(folder):
     if not os.path.exists(folder):
         print 'creating folder ' + folder
         os.makedirs(folder)
+
+
+def file_safety(path):
+    open(path, 'a').close()
