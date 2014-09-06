@@ -2,7 +2,6 @@ import socket
 import time
 import thread
 import urllib2 as ulib
-import re
 import sqlite3 as sql
 
 #TODO: load from database & add all other userdata variables

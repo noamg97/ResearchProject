@@ -43,9 +43,6 @@ def main():
         except Exception as ex:
             #exit nicely when an exception is raised.
             print '\n', traceback.format_exc()
-            #for frame in traceback.extract_tb(sys.exc_info()[2]):
-            #    fname,lineno,fn,text = frame
-            #    print "--->%s in %s on line %d\nException Arguments: %s" % (type(ex).__name__, fname, lineno, ex.args)
             break
         
     print '\nExited main loop'
