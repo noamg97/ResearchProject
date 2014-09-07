@@ -1,6 +1,7 @@
 import Message
 import os
 import Paths
+import Shared
 from datetime import datetime
 
 #chat data and profile data are stored in different files.
@@ -17,8 +18,8 @@ class UserData:
         self.chat_data_file_path = Paths.chat_data_path + Paths.slash + self.username + Paths.data_file_extension
         
         Paths.check_all()
-        Path.file_safety(self.profile_data_file_path)
-        Path.file_safety(self.chat_data_file_path)
+        Paths.file_safety(self.profile_data_file_path)
+        Paths.file_safety(self.chat_data_file_path)
         
         self.load_data()
 
@@ -78,6 +79,9 @@ class UserData:
         self.save_data()
         
     def append_message_to_chat(self, message):
+        if not any(self.chat_data):
+            Shared.main_window.calls.put((Shared.main_window.append_active_chat, self.username))
+            
         self.chat_data.append(message)
         self.chat_data_file.seek(0, 2)
         self.chat_data_file.write(message.to_data())

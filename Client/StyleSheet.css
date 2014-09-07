@@ -22,6 +22,11 @@ GtkButton:active{
     background-color: #fff;
 }
 
+#left_side_frame, #username_and_state_box *{
+    background-color: #343131;
+    color: #FFF;
+}
+
 #notebook_frame GtkButton{
     background-color: #343131;
     color: white;
@@ -52,7 +57,7 @@ GtkNotebook, #friend_requests_container{
 }
 
 GtkNotebook tab{
-    padding: 10px 20px 10px 20px;
+    padding: 7px 15px 7px 15px;
     background-image: none;
     background-color: #343131;
     color: #fff;

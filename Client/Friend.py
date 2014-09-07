@@ -15,9 +15,16 @@ class StateCodes:
         for _state, _code in vars(StateCodes).iteritems():
             if str(_code) == str(code):
                 return str(_state)
-        return ''
+        raise Exception("No state matches state code " + code)
+        
+    @staticmethod
+    def get_code_by_state(state):
+        for _state, _code in vars(StateCodes).iteritems():
+            if str(_state) == str(state):
+                return _code
+        raise Exception("No state code matches state " + state)
 
-
+        
 class Friend:
     def __init__(self, username):
         self.state = StateCodes.offline

@@ -12,6 +12,9 @@ def send_message(username, msg):
     else:
         print 'User ' + friend + ' not on friends list'
 
+def state_changed(state):
+    Shared.server.message(OpCodes.my_state_changed, str(state))
+        
 def send_friend_request(friend):
     friend = str(friend).strip()
     if friend in Shared.friends_list:

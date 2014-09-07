@@ -1,11 +1,13 @@
 import UserInputParser
 import Shared
+import Paths
+from Friend import StateCodes
 import os
 import Queue
 from datetime import datetime
 from math import pi
 os.environ['LANG'] = 'en_US'
-from gi.repository import Gtk, Gdk, GObject, GLib
+from gi.repository import Gtk, Gdk, GObject, GLib, GdkPixbuf
 GObject.threads_init()
 
 main_win = None
@@ -39,26 +41,50 @@ class MainWindow(Gtk.Window):
         self.chat_side = Gtk.VBox()
         hpaned.pack2(self.chat_side, resize=True, shrink=False)
         
+        left_side_frame = Gtk.Frame(name="left_side_frame")
+        hpaned.pack1(left_side_frame, resize=False, shrink=False)
+        left_side = Gtk.VBox(0, False)
+        left_side_frame.add(left_side)
         
-        notebook_frame = Gtk.Frame(name='notebook_frame')
-        notebook_frame.set_size_request(250,350)
-        hpaned.pack1(notebook_frame, resize=False, shrink=False)
+        state_store = Gtk.ListStore(str, GdkPixbuf.Pixbuf)
+        for state in ['Online', 'AFK', 'Busy', 'Offline']:
+            icn = GdkPixbuf.Pixbuf.new_from_file_at_size("images" + Paths.slash + "state_" + state.lower() + ".png", 14, 14)
+            state_store.append([state if not state=='Offline' else 'Invisible', icn])
+
+        state_box = Gtk.ComboBox.new_with_model(state_store)
+        state_box.set_active(0)
+        state_box.connect("changed", self.on_my_state_changed)
+        
+        renderer_text = Gtk.CellRendererText()
+        state_box.pack_start(renderer_text, True)
+        state_box.add_attribute(renderer_text, "text", 0)
+        state_renderer = Gtk.CellRendererPixbuf()
+        state_box.pack_start(state_renderer, False)
+        state_box.add_attribute(state_renderer, "pixbuf", 1)
+
+        
+        username_and_state_box = Gtk.HBox(False, 0, name="username_and_state_box")
+        username_and_state_box.pack_start(Gtk.Label(Shared.my_data.username), False, False, 10)
+        username_and_state_box.pack_end(state_box, False, False, 10)
+        left_side.pack_start(username_and_state_box, False, False, 10)
+        
+        
+        notebook_frame = Gtk.Frame(name='notebook_frame', width_request=250, height_request=350)
+        left_side.pack_start(notebook_frame, True, True, 0)
+        
         notebook = Gtk.Notebook()
         notebook.set_scrollable(True)
         notebook.popup_disable()
         notebook_frame.add(notebook)
         
-        self.flist = FriendsListWidget()
+        self.contacts_list = FriendsListWidget()
         for f in Shared.friends_list:
             self.append_friend(f.data.username)
             
-        notebook.append_page(self.flist, Gtk.Label('3Heads'))
         
 
         
         friend_requests_container = Gtk.VBox(True, 4)
-        notebook.append_page(friend_requests_container, Gtk.Label('Head+'))
-        
         friend_to_add_username_box = Gtk.VBox(False, 4)
         friend_requests_container.pack_start(friend_to_add_username_box, True, False, 0)
         username_lbl = Gtk.Label("\n\n\n\n\n\nFriend's Username:")
@@ -74,14 +100,39 @@ class MainWindow(Gtk.Window):
         friend_requests_container.pack_start(self.in_frequests_box, True, False, 0)
         self.in_frequests_box.pack_start(Gtk.Label("New Friend Requests"), False, False, 4)
 
+        
+        
+        self.active_chats = FriendsListWidget()
+        
+        notebook.append_page(self.active_chats, Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size("images" + Paths.slash + "active_chats.png", 40, 40)))
+        notebook.append_page(friend_requests_container, Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size("images" + Paths.slash + "add_friend.png", 40, 40)))
+        notebook.append_page(self.contacts_list, Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_size("images" + Paths.slash + "contacts.png", 40, 40)))
 
+        
         self.show_all()
         self.load_chat_data()
         
 
         GObject.timeout_add(100, self.update)
 
+    def draw_friend_state(self, drawing_area, cr):
+        print 'got here'
+        state = drawing_area.get_name().lower()
+
+        cr.arc(drawing_area.get_allocated_width()/2, drawing_area.get_allocated_height()/2, drawing_area.get_allocated_width()*0.4, 0.0, 2.0 * pi)
+        cr.set_source_rgba(1,1,1,1)
+        cr.set_line_width(2.5)
+        cr.stroke()
         
+        if state == 'offline': cr.set_source_rgba  (52/255.0,  49/255.0,   49/255.0,   1.0)
+        elif state == 'online': cr.set_source_rgba (5/255.0,   198/255.0,  0,          1.0)
+        elif state == 'afk': cr.set_source_rgba    (1,         172/255.0,  0,          1.0)
+        elif state == 'busy': cr.set_source_rgba   (200/255.0, 0,          0,          1.0)
+        else: cr.set_source_rgba(1, 1, 1,1)
+        
+        cr.arc(drawing_area.get_allocated_width()/2, drawing_area.get_allocated_height()/2, drawing_area.get_allocated_width()*0.4, 0.0, 2.0 * pi)
+        cr.fill()
+
         
     def update(self):
         while not self.calls.empty():
@@ -96,29 +147,43 @@ class MainWindow(Gtk.Window):
         if data and data.keyval != 65293:
             return False
         if self.current_chat_window_username:
-            friend = Shared.get_friend_by_username(self.current_chat_window_username)
-            if friend:
-                if self.current_chat_window.textbuffer.get_char_count():
-                    start, end = self.current_chat_window.textbuffer.get_bounds()
-                    friend.message(self.current_chat_window.textbuffer.get_text(start, end, True))
-                    self.current_chat_window.textbuffer.delete(start, end)
+            if self.current_chat_window.textbuffer.get_char_count():
+                start, end = self.current_chat_window.textbuffer.get_bounds()
+                UserInputParser.send_message(   self.current_chat_window_username, 
+                                                self.current_chat_window.textbuffer.get_text(start, end, True))
+                self.current_chat_window.textbuffer.delete(start, end)
         return True
         
+    def on_my_state_changed(self, statebox):
+        tree_iter = statebox.get_active_iter()
+        if tree_iter != None:
+            model = statebox.get_model()
+            state = model[tree_iter][0]
+            UserInputParser.state_changed(StateCodes.get_code_by_state(state.lower()))
+    
+    
     def load_chat_data(self):
         for friend in Shared.friends_list:
             self.chat_windows[friend.data.username].append_multiple(friend.data.chat_data)
             self.chat_windows[friend.data.username].hide()
             
+            if any(friend.data.chat_data):
+                self.active_chats.append(friend.data.username)
+            
     def append_chat_message(self, username, msg):
         self.chat_windows[username].append(msg, self.chat_windows[username] is self.current_chat_window)
   
+    def append_active_chat(self, friend_username):
+        self.active_chats.append(friend_username)
+  
     def append_friend(self, username):
-        self.flist.append(username)
+        self.contacts_list.append(username)
         self.chat_windows[username] = ChatWidget([])
         self.chat_side.pack_start(self.chat_windows[username], True, True, 0)
 
     def friend_state_changed(self, username, state):
-        self.flist.friend_state_changed(username, state)
+        self.contacts_list.friend_state_changed(username, state)
+        self.active_chats.friend_state_changed(username, state)
     
     def send_friend_request(self, widget, data=None):
         name = data.get_text()
@@ -164,8 +229,7 @@ class NewFriendRequestBox(Gtk.HBox):
         
 class ChatWidget(Gtk.VPaned):
     def __init__(self, friend_chat_data):
-        Gtk.VPaned.__init__(self)
-        self.set_size_request(450, 350)
+        Gtk.VPaned.__init__(self, width_request=450, height_request=350)
         
         self.chat_scroller = Gtk.ScrolledWindow()
         self.chat_scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
@@ -183,8 +247,7 @@ class ChatWidget(Gtk.VPaned):
         self.textbuffer = textview.get_buffer()
         lower_chat.pack_start(textview, True, True, 0)
         
-        send_btn = Gtk.Button("Send", halign=0)
-        send_btn.set_size_request(50,50)
+        send_btn = Gtk.Button("Send", halign=0, width_request=50, height_request=50)
         send_btn.connect("clicked", main_win.send)
         lower_chat.pack_start(send_btn, False, False, 0)
         
@@ -249,9 +312,8 @@ class FriendsListWidget(Gtk.EventBox):
         button.connect('clicked', self.friends_list_selection_changed)
         box.pack_start(button, True, True, 0)
         
-        state_ind = Gtk.DrawingArea(name='offline', margin_right=15)
-        state_ind.set_size_request(15, 15)
-        state_ind.connect('draw', self.draw_friend_state)
+        state_ind = Gtk.DrawingArea(name='offline', margin_right=15, width_request=15, height_request=15)
+        state_ind.connect('draw', FriendsListWidget.draw_friend_state)
 
         
         box.pack_start(state_ind, False, False, 0)
@@ -283,8 +345,9 @@ class FriendsListWidget(Gtk.EventBox):
             main_win.current_chat_window.hide()
         main_win.current_chat_window = None
         main_win.current_chat_window_username = None
-
-    def draw_friend_state(self, drawing_area, cr):
+    
+    @staticmethod
+    def draw_friend_state(drawing_area, cr):
         state = drawing_area.get_name().lower()
 
         cr.arc(drawing_area.get_allocated_width()/2, drawing_area.get_allocated_height()/2, drawing_area.get_allocated_width()*0.4, 0.0, 2.0 * pi)
@@ -303,12 +366,9 @@ class FriendsListWidget(Gtk.EventBox):
 
         
     def friend_state_changed(self, username, state):
-        print 1
         for box in [frame.get_children()[0] for frame in self.main_box.get_children()]:
-            print 2
             btn, state_area = box.get_children()
             if btn.props.label == username:
-                print 3
                 state_area.set_name(state)
                 state_area.queue_draw()
                 break

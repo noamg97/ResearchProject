@@ -102,9 +102,8 @@ class Server:
             if frnds_list_msg[:OpCodes.num_char] == OpCodes.friends_list:
                 f_list = frnds_list_msg[OpCodes.num_char:].split(',')
                 for f in f_list:
-                    UserData.UserData.create_files(f)
                     frnd = Friend.Friend(f)
-                    Shared.friends_list.append(f)
+                    Shared.friends_list.append(frnd)
             
             self.sock.setblocking(0)
             self.message(OpCodes.my_state_changed, state)
