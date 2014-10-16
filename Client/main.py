@@ -24,7 +24,7 @@ def main():
     
     #init
     Shared.server.init_sleeping_sockets()
-    print 'Friends List: { ' + ','.join([fr.data.username for fr in Shared.friends_list]) + ' }'
+    print 'Friends List: { ' + ','.join([fr.username for fr in Shared.friends_list]) + ' }'
     
     server_init_finished = True
     while not gui_init_finished: pass

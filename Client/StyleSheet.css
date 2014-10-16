@@ -46,7 +46,7 @@ GtkButton:active{
 
 GtkNotebook *{
     color: #fff;
-    font-size: 11px;
+    /*font-size: 11px;*/
 }
 
 GtkNotebook, #friend_requests_container{

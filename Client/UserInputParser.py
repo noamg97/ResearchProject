@@ -2,11 +2,11 @@ import OpCodes
 import Friend
 import Shared
 
-def connect_to_friend(username):
-    Shared.server.message(OpCodes.connect_to_friend, username)
+def connect_to_peer(username):
+    Shared.server.message(OpCodes.connect_to_peer, username)
  
 def send_message(username, msg):
-    friend = Shared.get_friend_by_username(username)
+    friend = Shared.get_peer_by_username(username)
     if friend:
         friend.message(msg)
     else:

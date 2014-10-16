@@ -1,9 +1,10 @@
 my_data = None
 server = None
-friends_list = []
+peers_list = []
 main_window = None
 
-def get_friend_by_username(username):
-    for fr in friends_list:
-        if fr.data.username == username:
-            return fr
+def get_peer_by_username(username):
+    '''returns a Peer object if user is on either peers_list, else returns None'''
+    for peer in peers_list:
+        if peer.username == username:
+            return peer

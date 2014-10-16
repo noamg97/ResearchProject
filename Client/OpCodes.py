@@ -23,7 +23,7 @@ sleeping_socket_declined = '94'
 
 #outgoing
 my_state_changed = '00'
-connect_to_friend = '01'
+connect_to_peer = '01'
 profile_data_changed = '02'
 send_friend_request = '03'
 accept_friend_request = '04'
@@ -35,6 +35,8 @@ friend_state_changed = '98'
 friend_request = '97'
 friend_request_accepted = '96'
 friend_request_declined = '95'
+added_to_group = '94'
+
 
 
 @staticmethod

@@ -29,7 +29,7 @@ def parse_friend_connecting(value):
     port = a[2]
     print 'friend connecting: ' + friend_username + ' at ' + ip + ':' +  port
     
-    friend = Shared.get_friend_by_username(friend_username)
+    friend = Shared.get_peer_by_username(friend_username)
     if friend:
         friend.sock = Shared.server.sleeping_sockets[0]
         Shared.server.sleeping_sockets.pop(0)
@@ -43,7 +43,7 @@ def parse_friend_connecting(value):
 #friend_username,state_code
 def parse_friend_state_changed(value):
     friend_username, state = value.split(',')
-    friend = Shared.get_friend_by_username(friend_username)
+    friend = Shared.get_peer_by_username(friend_username)
     if friend:
         friend.change_state(state)
     
@@ -62,3 +62,7 @@ def parse_friend_request_accepted(value):
 #friend_username
 def parse_friend_request_declined(value):
     print 'User ' + value + ' declined your friend request'
+    
+#group_id,group_name,member1_id,...,memberN_id
+def parse_added_to_group(value):
+    
