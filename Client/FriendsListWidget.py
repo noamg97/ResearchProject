@@ -1,3 +1,6 @@
+import Shared
+from math import pi
+import os
 os.environ['LANG'] = 'en_US'
 from gi.repository import Gtk, Gdk, GObject, GLib, GdkPixbuf
 GObject.threads_init()
@@ -44,24 +47,26 @@ class FriendsListWidget(Gtk.EventBox):
             self.selected_box.set_name("unselected_friend")
         self.selected_box = widget.get_parent().get_parent()
         self.selected_box.set_name("selected_friend")
-           
+
         if not data:
-            if not main_win.current_chat_window is main_win.chat_windows[user]:
-                if main_win.current_chat_window:
-                    main_win.current_chat_window.hide()
-                main_win.chat_windows[user].show_all()
-                main_win.current_chat_window = main_win.chat_windows[user]
-                main_win.current_chat_window_username = user
+            if not Shared.main_window.current_chat_window is Shared.main_window.chat_windows[user]:
+                if Shared.main_window.current_chat_window:
+                    Shared.main_window.current_chat_window.hide()
+                Shared.main_window.chat_windows[user].show_all()
+                Shared.main_window.current_chat_window = Shared.main_window.chat_windows[user]
+                Shared.main_window.current_chat_window_username = user
             self.brother_list.select_by_username(user)
 
-    def friends_list_clear_selection(self, widget, event, data=None):
+    def friends_list_clear_selection(self, widget, event, hide_current_chat=True):
         if self.selected_box:
             self.selected_box.set_name("unselected_friend")
             
-        if main_win.current_chat_window:
-            main_win.current_chat_window.hide()
-        main_win.current_chat_window = None
-        main_win.current_chat_window_username = None
+        if hide_current_chat:
+            if Shared.main_window.current_chat_window:
+                Shared.main_window.current_chat_window.hide()
+            Shared.main_window.current_chat_window = None
+            Shared.main_window.current_chat_window_username = None
+            self.brother_list.friends_list_clear_selection(None, None, False)
     
     def select_by_username(self, username):
         for frame in self.main_box.get_children():
@@ -69,7 +74,7 @@ class FriendsListWidget(Gtk.EventBox):
             if username == btn.props.label:
                 self.friends_list_selection_changed(btn, True)
                 return
-        self.friends_list_clear_selection(None, None)
+        self.friends_list_clear_selection(None, None, False)
     
     @staticmethod
     def draw_friend_state(drawing_area, cr):
@@ -96,6 +101,3 @@ class FriendsListWidget(Gtk.EventBox):
                 state_area.set_name(state)
                 state_area.queue_draw()
                 break
-                
-    def change_group_name():
-        

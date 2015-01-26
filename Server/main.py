@@ -172,7 +172,7 @@ if __name__ == "__main__":
     #TODO: maybe use separate socket for user creation
     
     main_socket = socket.socket()
-    main_socket.bind((socket.gethostbyname(socket.gethostname()), 4590))
+    main_socket.bind(('', 4590))
     my_ip, my_port = main_socket.getsockname()
     print 'internal endpoint: ' + my_ip + ':' + str(my_port)
     print '\n\n------------\n'

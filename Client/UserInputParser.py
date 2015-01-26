@@ -24,7 +24,7 @@ def send_friend_request(friend):
 
 def accept_friend_request(friend):
     Shared.server.message(OpCodes.accept_friend_request, friend)
-    Shared.friends_list.append(Friend.Friend(friend, True))
+    Shared.friends_list.append(Friend.Friend(friend))
     Shared.main_window.calls.put((Shared.main_window.append_friend, friend))
 
 def decline_friend_request(friend):

@@ -79,6 +79,7 @@ class Peer:
 
             try:
                 while not self.out_messages.empty():
+                    print 'sent message to', self.username
                     self.sock.send(self.out_messages.get().to_data() + ';')
             except socket.error:
                 self.is_connected = False

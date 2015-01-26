@@ -56,13 +56,9 @@ def parse_friend_request(value):
 #friend_username
 def parse_friend_request_accepted(value):
     print 'User ' + value + ' has accepted your friend request'
-    Shared.friends_list.append(Friend.Friend(value, True))
+    Shared.friends_list.append(Friend.Friend(value))
     Shared.main_window.calls.put((Shared.main_window.append_friend, value))
     
 #friend_username
 def parse_friend_request_declined(value):
-    print 'User ' + value + ' declined your friend request'
-    
-#group_id,group_name,member1_id,...,memberN_id
-def parse_added_to_group(value):
-    
+    print 'User ' + value + ' declined your friend request'    

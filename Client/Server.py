@@ -100,7 +100,7 @@ class Server:
             frnds_list_msg = self.recv_one_blocking()
             #TODO: also check that there aren't any data files of non friends
             if frnds_list_msg[:OpCodes.num_char] == OpCodes.friends_list:
-                f_list = frnds_list_msg[OpCodes.num_char:].split(',')
+                f_list = [f for f in frnds_list_msg[OpCodes.num_char:].split(',') if f]
                 for f in f_list:
                     frnd = Friend.Friend(f)
                     Shared.friends_list.append(frnd)

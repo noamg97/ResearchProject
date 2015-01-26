@@ -35,7 +35,6 @@ friend_state_changed = '98'
 friend_request = '97'
 friend_request_accepted = '96'
 friend_request_declined = '95'
-added_to_group = '94'
 
 
 

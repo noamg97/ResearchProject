@@ -1,3 +1,6 @@
+import Shared
+import os
+from datetime import datetime
 os.environ['LANG'] = 'en_US'
 from gi.repository import Gtk, Gdk, GObject, GLib, GdkPixbuf
 GObject.threads_init()
@@ -24,7 +27,7 @@ class ChatWidget(Gtk.VPaned):
         lower_chat.pack_start(textview, True, True, 0)
         
         send_btn = Gtk.Button("Send", halign=0, width_request=50, height_request=50)
-        send_btn.connect("clicked", main_win.send)
+        send_btn.connect("clicked", Shared.main_window.send)
         lower_chat.pack_start(send_btn, False, False, 0)
         
         
@@ -61,6 +64,6 @@ class ChatWidget(Gtk.VPaned):
     
     def key_event(self, widget, ev, data=None):
         if ev.keyval == 65293:
-            main_win.send(None)
+            Shared.main_window.send(None)
             return True
         return False

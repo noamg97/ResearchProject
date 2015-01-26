@@ -1,6 +1,7 @@
 from Peer import Peer
 import UserData
 import Shared
+import Message
 
 class StateCodes:
     offline = 0; online = 1; afk = 2; busy = 3

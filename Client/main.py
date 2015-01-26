@@ -75,7 +75,7 @@ if __name__ == '__main__':
         
         
         #init GUI and main GUI loop
-        Shared.main_window = MainWindow.MainWindow()
+        MainWindow.MainWindow()
         gui_init_finished = True
         Shared.main_window.main()
         

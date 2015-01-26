@@ -2,24 +2,23 @@ from datetime import datetime
 import Shared
 
 class Message:
-    def __init__(self, author, content, time=datetime.now(), group_id=0):
-        self.group_id = 0
+    def __init__(self, author, content, time=datetime.now()):
         self.author = author
         self.content = content
         self.time = time
     
-    #group_id,author,time,msg_length,msg
+    #author,time,msg_length,msg
     
     def to_data(self):
         msg = str(self.content)
-        return str(self.group_id) + str(self.author) + ',' + str(self.time) + ',' + str(len(msg)) + ',' + msg
+        return str(self.author) + ',' + str(self.time) + ',' + str(len(msg)) + ',' + msg
     
     @staticmethod
     def from_data(data):
         num = 0
         while num < len(data):
             msg_data = []
-            for i in xrange(4):
+            for i in xrange(3):
                 field = ''
                 c = data[num]
                 while c != ',':
@@ -29,9 +28,9 @@ class Message:
                 num+=1
                 msg_data.append(field)
             
-            msg = data[num:num+int(msg_data[3])]
-            num += int(msg_data[3])
-        return Message(msg_data[0], msg_data[1], msg, datetime.strptime(msg_data[2], '%Y-%m-%d %H:%M:%S.%f'))
+            msg = data[num:num+int(msg_data[2])]
+            num += int(msg_data[2])
+        return Message(msg_data[0], msg, datetime.strptime(msg_data[1], '%Y-%m-%d %H:%M:%S.%f'))
     
     def to_console(self):
         return '[' + str(self.time) + '] ' + str(self.author) + ': '+ str(self.content)

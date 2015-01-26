@@ -101,8 +101,12 @@ def parse_friend_request_accepted(data, username):
         
         db.remove_from_field(friend_username, 'sent_friend_requests', username)
         
+        users_sockets[username].send(send_state_changed + str(friend_username) + ',' + str(users_sockets[friend_username].state))
+        
         if int(db.get_fields(friend_username, 'state')[0][0]) != 0:
             users_sockets[friend_username].send(send_friend_request_accepted + username)
+            if username in users_sockets and friend_username in users_sockets:
+                users_sockets[friend_username].send(send_state_changed + str(username) + ',' + str(users_sockets[username].state))
         else:
             db.append_to_field(friend_username, 'queued_messages', send_friend_request_accepted + username)
         

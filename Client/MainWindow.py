@@ -11,11 +11,12 @@ os.environ['LANG'] = 'en_US'
 from gi.repository import Gtk, Gdk, GObject, GLib, GdkPixbuf
 GObject.threads_init()
 
-main_win = None
 
 
 class MainWindow(Gtk.Window):
     def __init__(self):
+        Shared.main_window = self
+        
         Gtk.Window.__init__(self, type=Gtk.WindowType.TOPLEVEL, title="Whoosh - " + Shared.my_data.username)
         self.connect("delete_event", self.delete_event)
         self.connect("destroy", self.destroy_event)
@@ -26,8 +27,6 @@ class MainWindow(Gtk.Window):
         self.chat_windows = {}
         self.current_chat_window = None
         self.current_chat_window_username = None
-        global main_win
-        main_win = self
         
         screen = Gdk.Screen.get_default()
         css_provider = Gtk.CssProvider()
@@ -78,7 +77,7 @@ class MainWindow(Gtk.Window):
         notebook.popup_disable()
         notebook_frame.add(notebook)
         
-        self.contacts_list = FriendsListWidget()
+        self.contacts_list = FriendsListWidget.FriendsListWidget()
         for f in Shared.friends_list:
             self.append_friend(f.username)
             
@@ -103,7 +102,7 @@ class MainWindow(Gtk.Window):
 
         
         
-        self.active_chats = FriendsListWidget()
+        self.active_chats = FriendsListWidget.FriendsListWidget()
         
         self.active_chats.brother_list = self.contacts_list
         self.contacts_list.brother_list = self.active_chats
@@ -181,10 +180,12 @@ class MainWindow(Gtk.Window):
   
     def append_active_chat(self, chat_title):
         self.active_chats.append(chat_title)
+        self.active_chats.friend_state_changed(chat_title, StateCodes.get_state_by_code(Shared.get_peer_by_username(chat_title).state))
+        self.active_chats.select_by_username(chat_title)
 
     def append_friend(self, username):
         self.contacts_list.append(username)
-        self.chat_windows[username] = ChatWidget([])
+        self.chat_windows[username] = ChatWidget.ChatWidget([])
         self.chat_side.pack_start(self.chat_windows[username], True, True, 0)
 
     def friend_state_changed(self, username, state):
@@ -195,6 +196,7 @@ class MainWindow(Gtk.Window):
         name = data.get_text()
         if name:
             UserInputParser.send_friend_request(name)
+            data.set_text('')
     
     def append_frequest(self, username):
         self.in_frequests_box.pack_end(NewFriendRequestBox(username), False, False, 4)
